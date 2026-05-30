@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>居民反馈管理</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #17313b;
+        --muted: #58706d;
+        --line: #d9e4e1;
+        --green: #2f9a66;
+        --blue: #2f82c7;
+        --red: #d9534f;
+        --panel: #ffffff;
+        --bg: #eef6f2;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+        color: var(--ink);
+        background: linear-gradient(135deg, #f7fbf6, var(--bg));
+      }
+
+      main {
+        width: min(1180px, calc(100% - 28px));
+        margin: 0 auto;
+        padding: 28px 0;
+      }
+
+      header,
+      .toolbar,
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: 0 18px 50px rgba(23, 49, 59, 0.08);
+      }
+
+      header {
+        padding: 22px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1.8rem, 4vw, 3.2rem);
+      }
+
+      p {
+        margin: 8px 0 0;
+        color: var(--muted);
+      }
+
+      .toolbar {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 12px;
+        margin: 16px 0;
+        padding: 16px;
+      }
+
+      input,
+      select,
+      button {
+        min-height: 42px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 0 12px;
+        font: inherit;
+      }
+
+      button {
+        color: white;
+        font-weight: 800;
+        background: var(--green);
+        cursor: pointer;
+      }
+
+      .list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      .card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .badge {
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 0.82rem;
+        font-weight: 900;
+        background: rgba(47, 154, 102, 0.14);
+        color: var(--green);
+      }
+
+      .badge.warning {
+        color: #8a5d12;
+        background: #fff3d4;
+      }
+
+      .badge.danger {
+        color: var(--red);
+        background: #ffe1de;
+      }
+
+      dl {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin: 14px 0 0;
+      }
+
+      dt {
+        color: #2f6f68;
+        font-size: 0.78rem;
+        font-weight: 900;
+      }
+
+      dd {
+        margin: 4px 0 0;
+        color: var(--muted);
+        overflow-wrap: anywhere;
+      }
+
+      .status-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .status-row select {
+        min-width: 130px;
+      }
+
+      .empty {
+        padding: 30px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      @media (max-width: 760px) {
+        .toolbar,
+        dl {
+          grid-template-columns: 1fr;
+        }
+
+        .card-head,
+        .status-row {
+          align-items: stretch;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>居民反馈管理</h1>
+        <p>输入管理员密钥后，可以查看居民提交的反馈并更新处理状态。</p>
+      </header>
+
+      <section class="toolbar">
+        <input id="adminKey" type="password" placeholder="管理员密钥" />
+        <select id="statusFilter">
+          <option value="">全部状态</option>
+          <option value="待处理">待处理</option>
+          <option value="处理中">处理中</option>
+          <option value="已处理">已处理</option>
+          <option value="已回访">已回访</option>
+        </select>
+        <button id="loadButton" type="button">读取反馈</button>
+      </section>
+
+      <section id="feedbackList" class="list"></section>
+    </main>
+
+    <script>
+      const adminKeyInput = document.querySelector("#adminKey");
+      const statusFilter = document.querySelector("#statusFilter");
+      const loadButton = document.querySelector("#loadButton");
+      const feedbackList = document.querySelector("#feedbackList");
+      let feedback = [];
+
+      adminKeyInput.value = localStorage.getItem("feedbackAdminKey") || "";
+      loadButton.addEventListener("click", loadFeedback);
+      statusFilter.addEventListener("change", render);
+
+      async function loadFeedback() {
+        const key = adminKeyInput.value.trim();
+        if (!key) {
+          alert("请先输入管理员密钥");
+          return;
+        }
+        localStorage.setItem("feedbackAdminKey", key);
+        const response = await fetch(`/api/feedback?key=${encodeURIComponent(key)}`);
+        if (!response.ok) {
+          alert("读取失败，请检查管理员密钥");
+          return;
+        }
+        feedback = await response.json();
+        render();
+      }
+
+      async function updateStatus(id, status) {
+        const key = adminKeyInput.value.trim();
+        const response = await fetch(`/api/feedback/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Admin-Key": key,
+          },
+          body: JSON.stringify({ status }),
+        });
+        if (!response.ok) {
+          alert("状态更新失败");
+          return;
+        }
+        await loadFeedback();
+      }
+
+      function render() {
+        const filter = statusFilter.value;
+        const list = filter ? feedback.filter((item) => item.status === filter) : feedback;
+        if (list.length === 0) {
+          feedbackList.innerHTML = `<div class="card empty">暂无反馈记录</div>`;
+          return;
+        }
+
+        feedbackList.innerHTML = list
+          .map((item) => {
+            const urgencyClass = item.urgency === "紧急" ? "danger" : item.urgency === "较急" ? "warning" : "";
+            return `<article class="card">
+              <div class="card-head">
+                <div>
+                  <strong>${escapeHtml(item.type)}</strong>
+                  <p>${escapeHtml(item.text)}</p>
+                </div>
+                <span class="badge ${urgencyClass}">${escapeHtml(item.urgency)}</span>
+              </div>
+              <dl>
+                <div><dt>位置</dt><dd>${escapeHtml(item.location)}</dd></div>
+                <div><dt>联系方式</dt><dd>${escapeHtml(item.contact || "未填写")}</dd></div>
+                <div><dt>回访需求</dt><dd>${escapeHtml(item.callback)}</dd></div>
+                <div><dt>提交时间</dt><dd>${new Date(item.time).toLocaleString("zh-CN")}</dd></div>
+              </dl>
+              <div class="status-row">
+                <select data-id="${escapeHtml(item.id)}">
+                  ${["待处理", "处理中", "已处理", "已回访"].map((status) => `<option value="${status}" ${status === item.status ? "selected" : ""}>${status}</option>`).join("")}
+                </select>
+                <button type="button" data-update="${escapeHtml(item.id)}">更新状态</button>
+              </div>
+            </article>`;
+          })
+          .join("");
+
+        feedbackList.querySelectorAll("[data-update]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const id = button.dataset.update;
+            const select = feedbackList.querySelector(`select[data-id="${CSS.escape(id)}"]`);
+            updateStatus(id, select.value);
+          });
+        });
+      }
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+    </script>
+  </body>
+</html>

@@ -50,6 +50,7 @@ const feedbackForm = document.querySelector("#feedbackForm");
 const feedbackList = document.querySelector("#feedbackList");
 const clearFeedbackButton = document.querySelector("#clearFeedbackButton");
 const recordTable = document.querySelector("#recordTable");
+const feedbackApiBase = (window.ENV_MONITOR_CONFIG?.feedbackApiBase || "").replace(/\/$/, "");
 
 let paused = false;
 let tick = 0;
@@ -192,7 +193,7 @@ exportButton.addEventListener("click", () => {
   downloadText(`environment-records-${Date.now()}.csv`, csv, "text/csv;charset=utf-8");
 });
 
-feedbackForm.addEventListener("submit", (event) => {
+feedbackForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const type = document.querySelector("#feedbackType").value;
   const urgency = document.querySelector("#feedbackUrgency").value;
@@ -202,7 +203,7 @@ feedbackForm.addEventListener("submit", (event) => {
   const text = document.querySelector("#feedbackText").value.trim();
   if (!location || !text) return;
 
-  savedFeedback.unshift({
+  const feedback = {
     type,
     urgency,
     location,
@@ -211,11 +212,23 @@ feedbackForm.addEventListener("submit", (event) => {
     text,
     status: "待处理",
     time: new Date().toISOString(),
-  });
+  };
+
+  const submitButton = feedbackForm.querySelector("button[type='submit']");
+  submitButton.disabled = true;
+  submitButton.textContent = "正在提交...";
+
+  const result = await submitFeedback(feedback);
+  savedFeedback.unshift(result.feedback);
   savedFeedback = savedFeedback.slice(0, 50);
   saveFeedback();
   renderFeedback();
   feedbackForm.reset();
+  submitButton.disabled = false;
+  submitButton.textContent = result.synced ? "已提交到云端" : "已暂存到本机";
+  window.setTimeout(() => {
+    submitButton.textContent = "提交居民反馈";
+  }, 1600);
 });
 
 clearFeedbackButton.addEventListener("click", () => {
@@ -244,7 +257,7 @@ function renderRecords() {
 
 function renderFeedback() {
   if (savedFeedback.length === 0) {
-    feedbackList.innerHTML = `<li class="empty-feedback">暂无居民反馈</li>`;
+    feedbackList.innerHTML = `<li class="empty-feedback">${feedbackApiBase ? "暂无近期反馈" : "暂无本机反馈"}</li>`;
     return;
   }
 
@@ -262,7 +275,7 @@ function renderFeedback() {
           <div><dt>位置</dt><dd>${escapeHtml(item.location || "未填写")}</dd></div>
           <div><dt>回访</dt><dd>${escapeHtml(item.callback || "未填写")}</dd></div>
           <div><dt>联系</dt><dd>${escapeHtml(item.contact || "未留联系方式")}</dd></div>
-          <div><dt>状态</dt><dd>${escapeHtml(item.status || "待处理")}</dd></div>
+          <div><dt>状态</dt><dd>${escapeHtml(item.synced === false ? "本机暂存" : item.status || "待处理")}</dd></div>
         </dl>
         <time>${time.toLocaleString("zh-CN")}</time>
       </li>`;
@@ -272,6 +285,46 @@ function renderFeedback() {
 
 function saveFeedback() {
   localStorage.setItem("environmentFeedback", JSON.stringify(savedFeedback));
+}
+
+async function submitFeedback(feedback) {
+  if (!feedbackApiBase) {
+    return {
+      synced: false,
+      feedback: { ...feedback, id: crypto.randomUUID(), synced: false },
+    };
+  }
+
+  try {
+    const response = await fetch(`${feedbackApiBase}/api/feedback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(feedback),
+    });
+    if (!response.ok) throw new Error("提交失败");
+    return { synced: true, feedback: await response.json() };
+  } catch {
+    return {
+      synced: false,
+      feedback: { ...feedback, id: crypto.randomUUID(), synced: false },
+    };
+  }
+}
+
+async function loadFeedbackFromCloud() {
+  if (!feedbackApiBase) return;
+  const adminKey = localStorage.getItem("feedbackAdminKey");
+  if (!adminKey) return;
+
+  try {
+    const response = await fetch(`${feedbackApiBase}/api/feedback?key=${encodeURIComponent(adminKey)}`);
+    if (!response.ok) return;
+    savedFeedback = await response.json();
+    saveFeedback();
+    renderFeedback();
+  } catch {
+    // Keep local cached feedback visible if the cloud service is unavailable.
+  }
 }
 
 function escapeHtml(value) {
@@ -308,5 +361,6 @@ for (let i = 0; i < 16; i += 1) {
 }
 
 renderFeedback();
+loadFeedbackFromCloud();
 drawChart();
 setInterval(refresh, 2200);
