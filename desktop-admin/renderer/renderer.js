@@ -77,7 +77,7 @@ function render() {
   renderStats();
   const list = getFilteredFeedback();
   if (list.length === 0) {
-    feedbackTable.innerHTML = `<tr><td class="empty" colspan="9">暂无匹配的居民反馈</td></tr>`;
+    feedbackTable.innerHTML = `<tr><td class="empty" colspan="10">暂无匹配的居民反馈</td></tr>`;
     return;
   }
 
@@ -88,6 +88,7 @@ function render() {
         <td>${escapeHtml(item.type)}</td>
         <td><span class="badge ${urgencyClass}">${escapeHtml(item.urgency || "一般")}</span></td>
         <td>${escapeHtml(item.location || "未填写")}</td>
+        <td>${escapeHtml(item.complaintAddress || item.location || "未填写")}</td>
         <td><div class="feedback-text">${escapeHtml(item.text || "")}</div></td>
         <td>${escapeHtml(item.contact || "未填写")}</td>
         <td>${escapeHtml(item.callback || "未填写")}</td>
@@ -130,16 +131,16 @@ function getFilteredFeedback() {
     if (status && item.status !== status) return false;
     if (urgency && item.urgency !== urgency) return false;
     if (!keyword) return true;
-    const haystack = [item.type, item.location, item.text, item.contact, item.callback, item.status].join(" ").toLowerCase();
+    const haystack = [item.type, item.location, item.complaintAddress, item.text, item.contact, item.callback, item.status].join(" ").toLowerCase();
     return haystack.includes(keyword);
   });
 }
 
 async function exportCsv() {
   const list = getFilteredFeedback();
-  const rows = [["类型", "紧急程度", "位置", "反馈内容", "联系方式", "回访", "状态", "提交时间"]];
+  const rows = [["类型", "紧急程度", "所在区域", "投诉地址", "反馈内容", "联系方式", "回访", "状态", "提交时间"]];
   list.forEach((item) => {
-    rows.push([item.type, item.urgency, item.location, item.text, item.contact || "", item.callback, item.status, formatTime(item.time)]);
+    rows.push([item.type, item.urgency, item.location, item.complaintAddress || item.location || "", item.text, item.contact || "", item.callback, item.status, formatTime(item.time)]);
   });
   const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
   await window.desktopApi.saveFile({

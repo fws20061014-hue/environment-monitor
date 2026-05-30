@@ -101,6 +101,7 @@ function normalizeFeedback(input) {
     type: requiredText(input.type, "反馈类型"),
     urgency: requiredText(input.urgency, "紧急程度"),
     location: requiredText(input.location, "所在位置"),
+    complaintAddress: requiredText(input.complaintAddress || input.location, "投诉地址"),
     contact: optionalText(input.contact),
     callback: requiredText(input.callback, "是否需要回访"),
     text: requiredText(input.text, "反馈内容"),

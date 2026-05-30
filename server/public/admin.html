@@ -252,7 +252,8 @@
                 <span class="badge ${urgencyClass}">${escapeHtml(item.urgency)}</span>
               </div>
               <dl>
-                <div><dt>位置</dt><dd>${escapeHtml(item.location)}</dd></div>
+                <div><dt>所在区域</dt><dd>${escapeHtml(item.location)}</dd></div>
+                <div><dt>投诉地址</dt><dd>${escapeHtml(item.complaintAddress || item.location)}</dd></div>
                 <div><dt>联系方式</dt><dd>${escapeHtml(item.contact || "未填写")}</dd></div>
                 <div><dt>回访需求</dt><dd>${escapeHtml(item.callback)}</dd></div>
                 <div><dt>提交时间</dt><dd>${new Date(item.time).toLocaleString("zh-CN")}</dd></div>

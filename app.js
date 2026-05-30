@@ -198,15 +198,17 @@ feedbackForm.addEventListener("submit", async (event) => {
   const type = document.querySelector("#feedbackType").value;
   const urgency = document.querySelector("#feedbackUrgency").value;
   const location = document.querySelector("#feedbackLocation").value.trim();
+  const complaintAddress = document.querySelector("#feedbackAddress").value.trim();
   const contact = document.querySelector("#feedbackContact").value.trim();
   const callback = document.querySelector("input[name='callback']:checked").value;
   const text = document.querySelector("#feedbackText").value.trim();
-  if (!location || !text) return;
+  if (!location || !complaintAddress || !text) return;
 
   const feedback = {
     type,
     urgency,
     location,
+    complaintAddress,
     contact,
     callback,
     text,
@@ -272,7 +274,8 @@ function renderFeedback() {
         </div>
         <p>${escapeHtml(item.text)}</p>
         <dl>
-          <div><dt>位置</dt><dd>${escapeHtml(item.location || "未填写")}</dd></div>
+          <div><dt>区域</dt><dd>${escapeHtml(item.location || "未填写")}</dd></div>
+          <div><dt>投诉地址</dt><dd>${escapeHtml(item.complaintAddress || item.location || "未填写")}</dd></div>
           <div><dt>回访</dt><dd>${escapeHtml(item.callback || "未填写")}</dd></div>
           <div><dt>联系</dt><dd>${escapeHtml(item.contact || "未留联系方式")}</dd></div>
           <div><dt>状态</dt><dd>${escapeHtml(item.synced === false ? "本机暂存" : item.status || "待处理")}</dd></div>
