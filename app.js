@@ -510,7 +510,7 @@ function renderAttachmentLinks(attachments = []) {
   return `<div class="attachment-links">${attachments
     .map((item, index) => {
       const href = item.url?.startsWith("http") ? item.url : `${feedbackApiBase}${item.url || ""}`;
-      return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener">附件 ${index + 1}</a>`;
+      return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener">&#38468;&#20214; ${index + 1}</a>`;
     })
     .join("")}</div>`;
 }
