@@ -100,26 +100,64 @@
         <aside class="feedback-panel">
           <div class="panel-title">
             <div>
-              <p class="eyebrow">Feedback</p>
-              <h2>反馈记录</h2>
+              <p class="eyebrow">Resident Feedback</p>
+              <h2>居民反馈</h2>
             </div>
           </div>
-          <form id="feedbackForm">
+
+          <form id="feedbackForm" class="resident-form">
+            <div class="form-grid">
+              <label>
+                反馈类型
+                <select id="feedbackType" required>
+                  <option value="空气异味">空气异味</option>
+                  <option value="粉尘较多">粉尘较多</option>
+                  <option value="噪声扰民">噪声扰民</option>
+                  <option value="温湿度不适">温湿度不适</option>
+                  <option value="设备异常">设备异常</option>
+                  <option value="其他建议">其他建议</option>
+                </select>
+              </label>
+
+              <label>
+                紧急程度
+                <select id="feedbackUrgency" required>
+                  <option value="一般">一般</option>
+                  <option value="较急">较急</option>
+                  <option value="紧急">紧急</option>
+                </select>
+              </label>
+            </div>
+
             <label>
-              反馈类型
-              <select id="feedbackType" required>
-                <option value="设备异常">设备异常</option>
-                <option value="数据偏高">数据偏高</option>
-                <option value="环境备注">环境备注</option>
-              </select>
+              所在位置
+              <input id="feedbackLocation" type="text" placeholder="例如：3号楼2单元门口、东侧广场" required />
             </label>
+
             <label>
-              记录内容
-              <textarea id="feedbackText" rows="4" placeholder="例如：粉尘浓度短时间升高，现场有人施工。" required></textarea>
+              联系方式
+              <input id="feedbackContact" type="text" placeholder="手机号或门牌号，可选" />
             </label>
-            <button type="submit">保存反馈</button>
+
+            <fieldset class="callback-field">
+              <legend>是否需要回访</legend>
+              <label><input type="radio" name="callback" value="需要回访" checked /> 需要回访</label>
+              <label><input type="radio" name="callback" value="无需回访" /> 无需回访</label>
+            </fieldset>
+
+            <label>
+              反馈内容
+              <textarea id="feedbackText" rows="4" placeholder="请描述时间、现象、影响范围，例如：晚上八点后广场附近噪声较大，影响休息。" required></textarea>
+            </label>
+
+            <button type="submit">提交居民反馈</button>
           </form>
-          <ul id="feedbackList" class="feedback-list" aria-label="反馈列表"></ul>
+
+          <div class="feedback-toolbar">
+            <strong>近期反馈</strong>
+            <button id="clearFeedbackButton" type="button">清空本机记录</button>
+          </div>
+          <ul id="feedbackList" class="feedback-list" aria-label="居民反馈列表"></ul>
         </aside>
       </section>
     </main>

@@ -48,12 +48,13 @@ const pauseIcon = document.querySelector("#pauseIcon");
 const exportButton = document.querySelector("#exportButton");
 const feedbackForm = document.querySelector("#feedbackForm");
 const feedbackList = document.querySelector("#feedbackList");
+const clearFeedbackButton = document.querySelector("#clearFeedbackButton");
 const recordTable = document.querySelector("#recordTable");
 
 let paused = false;
 let tick = 0;
 const records = [];
-const savedFeedback = JSON.parse(localStorage.getItem("environmentFeedback") || "[]");
+let savedFeedback = JSON.parse(localStorage.getItem("environmentFeedback") || "[]");
 
 function randomBetween(min, max) {
   return min + Math.random() * (max - min);
@@ -188,25 +189,41 @@ exportButton.addEventListener("click", () => {
   });
 
   const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
-  const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `environment-records-${Date.now()}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
+  downloadText(`environment-records-${Date.now()}.csv`, csv, "text/csv;charset=utf-8");
 });
 
 feedbackForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const type = document.querySelector("#feedbackType").value;
+  const urgency = document.querySelector("#feedbackUrgency").value;
+  const location = document.querySelector("#feedbackLocation").value.trim();
+  const contact = document.querySelector("#feedbackContact").value.trim();
+  const callback = document.querySelector("input[name='callback']:checked").value;
   const text = document.querySelector("#feedbackText").value.trim();
-  if (!text) return;
+  if (!location || !text) return;
 
-  savedFeedback.unshift({ type, text, time: new Date().toISOString() });
-  localStorage.setItem("environmentFeedback", JSON.stringify(savedFeedback.slice(0, 30)));
+  savedFeedback.unshift({
+    type,
+    urgency,
+    location,
+    contact,
+    callback,
+    text,
+    status: "待处理",
+    time: new Date().toISOString(),
+  });
+  savedFeedback = savedFeedback.slice(0, 50);
+  saveFeedback();
   renderFeedback();
   feedbackForm.reset();
+});
+
+clearFeedbackButton.addEventListener("click", () => {
+  const confirmed = window.confirm("确定清空本机保存的居民反馈记录吗？");
+  if (!confirmed) return;
+  savedFeedback = [];
+  saveFeedback();
+  renderFeedback();
 });
 
 function renderRecords() {
@@ -226,16 +243,39 @@ function renderRecords() {
 }
 
 function renderFeedback() {
+  if (savedFeedback.length === 0) {
+    feedbackList.innerHTML = `<li class="empty-feedback">暂无居民反馈</li>`;
+    return;
+  }
+
   feedbackList.innerHTML = savedFeedback
     .map((item) => {
       const time = new Date(item.time);
-      return `<li><strong>${escapeHtml(item.type)}</strong><span>${escapeHtml(item.text)}</span><time>${time.toLocaleString("zh-CN")}</time></li>`;
+      const urgencyClass = item.urgency === "紧急" ? "danger" : item.urgency === "较急" ? "warning" : "normal";
+      return `<li>
+        <div class="feedback-entry-head">
+          <strong>${escapeHtml(item.type)}</strong>
+          <span class="urgency ${urgencyClass}">${escapeHtml(item.urgency || "一般")}</span>
+        </div>
+        <p>${escapeHtml(item.text)}</p>
+        <dl>
+          <div><dt>位置</dt><dd>${escapeHtml(item.location || "未填写")}</dd></div>
+          <div><dt>回访</dt><dd>${escapeHtml(item.callback || "未填写")}</dd></div>
+          <div><dt>联系</dt><dd>${escapeHtml(item.contact || "未留联系方式")}</dd></div>
+          <div><dt>状态</dt><dd>${escapeHtml(item.status || "待处理")}</dd></div>
+        </dl>
+        <time>${time.toLocaleString("zh-CN")}</time>
+      </li>`;
     })
     .join("");
 }
 
+function saveFeedback() {
+  localStorage.setItem("environmentFeedback", JSON.stringify(savedFeedback));
+}
+
 function escapeHtml(value) {
-  return value
+  return String(value)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -245,6 +285,16 @@ function escapeHtml(value) {
 
 function csvCell(value) {
   return `"${String(value).replaceAll('"', '""')}"`;
+}
+
+function downloadText(filename, text, type) {
+  const blob = new Blob(["\ufeff", text], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 for (let i = 0; i < 16; i += 1) {
