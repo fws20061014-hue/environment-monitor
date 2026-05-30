@@ -29,4 +29,13 @@ http://122.152.220.132
 
 ## 后续打包
 
-当前版本先用于本机运行和演示。后续如果需要生成 `.exe` 安装包，可以继续加入 `electron-builder`。
+生成 Windows 可执行文件：
+
+```bash
+npm run dist
+```
+
+打包结果在 `desktop-admin/dist/` 中：
+
+- `居民反馈管理.exe`：免安装版，双击运行
+- `居民反馈管理 Setup ...exe`：安装版

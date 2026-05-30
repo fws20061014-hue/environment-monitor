@@ -2,3 +2,4 @@ server/data/
 *.log
 node_modules/
 desktop-admin/node_modules/
+desktop-admin/dist/
