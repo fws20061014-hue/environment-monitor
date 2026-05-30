@@ -271,18 +271,24 @@ feedbackForm.addEventListener("submit", async (event) => {
   submitButton.disabled = true;
   submitButton.textContent = "正在提交...";
 
-  const result = await submitFeedback(feedback, files);
-  savedFeedback.unshift(result.feedback);
-  savedFeedback = savedFeedback.slice(0, 50);
-  saveFeedback();
-  renderFeedback();
-  renderFeedbackStats();
-  feedbackForm.reset();
-  submitButton.disabled = false;
-  submitButton.textContent = result.synced ? "已提交到云端" : "已暂存到本机";
-  window.setTimeout(() => {
-    submitButton.textContent = "提交居民反馈";
-  }, 1600);
+  try {
+    const result = await submitFeedback(feedback, files);
+    savedFeedback.unshift(result.feedback);
+    savedFeedback = savedFeedback.slice(0, 50);
+    saveFeedback();
+    renderFeedback();
+    renderFeedbackStats();
+    feedbackForm.reset();
+    submitButton.textContent = result.synced ? "已提交到云端" : "提交失败，已暂存到本机";
+  } catch (error) {
+    window.alert(`提交失败：${error.message}`);
+    submitButton.textContent = "提交失败，请重试";
+  } finally {
+    submitButton.disabled = false;
+    window.setTimeout(() => {
+      submitButton.textContent = "提交居民反馈";
+    }, 1800);
+  }
 });
 
 clearFeedbackButton.addEventListener("click", () => {
@@ -448,6 +454,9 @@ async function submitFeedback(feedback, files = []) {
     };
   }
 
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 60000);
+
   try {
     const formData = new FormData();
     Object.entries(feedback).forEach(([key, value]) => {
@@ -460,14 +469,32 @@ async function submitFeedback(feedback, files = []) {
     const response = await fetch(`${feedbackApiBase}/api/feedback`, {
       method: "POST",
       body: formData,
+      signal: controller.signal,
     });
-    if (!response.ok) throw new Error("提交失败");
+    if (!response.ok) {
+      const message = await readErrorMessage(response);
+      throw new Error(message || "提交失败");
+    }
     return { synced: true, feedback: await response.json() };
-  } catch {
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("上传超时，请检查网络或压缩附件后重试");
+    }
     return {
       synced: false,
-      feedback: { ...feedback, id: crypto.randomUUID(), synced: false },
+      feedback: { ...feedback, attachments: [], id: crypto.randomUUID(), synced: false },
     };
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+async function readErrorMessage(response) {
+  try {
+    const data = await response.json();
+    return data.error;
+  } catch {
+    return response.status === 413 ? "附件过大，请压缩后再上传" : `服务器返回 ${response.status}`;
   }
 }
 

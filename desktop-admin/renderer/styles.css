@@ -215,6 +215,28 @@ td a {
   font-weight: 800;
 }
 
+.attachment-preview {
+  display: grid;
+  gap: 6px;
+  min-width: 120px;
+  margin-bottom: 8px;
+}
+
+.attachment-preview img,
+.attachment-preview video {
+  width: 140px;
+  max-height: 100px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #e8f0ee;
+}
+
+.attachment-preview button {
+  min-height: 30px;
+  padding: 0 9px;
+  font-size: 0.78rem;
+}
+
 .feedback-text {
   max-width: 300px;
   color: var(--ink);

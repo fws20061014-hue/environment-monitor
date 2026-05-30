@@ -114,6 +114,11 @@ function render() {
       updateStatus(id, select.value);
     });
   });
+  feedbackTable.querySelectorAll("[data-open]").forEach((button) => {
+    button.addEventListener("click", () => {
+      window.desktopApi.openExternal(button.dataset.open);
+    });
+  });
 }
 
 function renderStats() {
@@ -158,9 +163,15 @@ function renderAttachments(attachments = []) {
   return attachments
     .map((item, index) => {
       const href = item.url?.startsWith("http") ? item.url : `${apiBase}${item.url || ""}`;
-      return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener">附件 ${index + 1}</a>`;
+      const title = escapeHtml(item.name || `附件 ${index + 1}`);
+      const preview = item.type?.startsWith("image/")
+        ? `<img src="${escapeHtml(href)}" alt="${title}" />`
+        : item.type?.startsWith("video/")
+          ? `<video src="${escapeHtml(href)}" controls preload="metadata"></video>`
+          : "";
+      return `<div class="attachment-preview">${preview}<button type="button" data-open="${escapeHtml(href)}">打开附件 ${index + 1}</button></div>`;
     })
-    .join("<br />");
+    .join("");
 }
 
 async function exportJson() {

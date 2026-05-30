@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
@@ -43,4 +43,8 @@ ipcMain.handle("save-file", async (_event, options) => {
 
   await fs.writeFile(result.filePath, options.content, "utf8");
   return { canceled: false, filePath: result.filePath };
+});
+
+ipcMain.handle("open-external", async (_event, url) => {
+  await shell.openExternal(url);
 });
