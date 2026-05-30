@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { basename, dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 
@@ -8,6 +8,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const dataDir = join(__dirname, "data");
 const dataFile = join(dataDir, "feedback.json");
 const publicDir = join(__dirname, "public");
+const uploadDir = join(__dirname, "uploads");
 const port = Number(process.env.PORT || 3000);
 const adminKey = process.env.ADMIN_KEY || "change-this-admin-key";
 const allowedOrigin = process.env.ALLOWED_ORIGIN || "*";
@@ -27,8 +28,8 @@ const server = createServer(async (request, response) => {
     }
 
     if (request.method === "POST" && url.pathname === "/api/feedback") {
-      const body = await readJsonBody(request);
-      const feedback = normalizeFeedback(body);
+      const { fields, attachments } = await readFeedbackBody(request);
+      const feedback = normalizeFeedback(fields, attachments);
       const list = await readFeedback();
       list.unshift(feedback);
       await writeFeedback(list.slice(0, 1000));
@@ -81,6 +82,13 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (request.method === "GET" && url.pathname.startsWith("/uploads/")) {
+      const fileName = basename(decodeURIComponent(url.pathname.replace("/uploads/", "")));
+      const file = await readFile(join(uploadDir, fileName));
+      send(response, 200, file, getContentType(fileName));
+      return;
+    }
+
     sendJson(response, 404, { error: "Not found" });
   } catch (error) {
     console.error(error);
@@ -100,7 +108,78 @@ async function readJsonBody(request) {
   return JSON.parse(raw);
 }
 
-function normalizeFeedback(input) {
+async function readFeedbackBody(request) {
+  const contentType = request.headers["content-type"] || "";
+  if (!contentType.startsWith("multipart/form-data")) {
+    return { fields: await readJsonBody(request), attachments: [] };
+  }
+
+  const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/);
+  if (!boundaryMatch) throw Object.assign(new Error("缺少上传边界"), { statusCode: 400 });
+
+  const raw = await readRawBody(request);
+  return parseMultipart(raw, boundaryMatch[1] || boundaryMatch[2]);
+}
+
+async function readRawBody(request) {
+  const chunks = [];
+  for await (const chunk of request) chunks.push(chunk);
+  return Buffer.concat(chunks);
+}
+
+async function parseMultipart(buffer, boundary) {
+  const fields = {};
+  const attachments = [];
+  const delimiter = Buffer.from(`--${boundary}`);
+  let cursor = 0;
+
+  while (cursor < buffer.length) {
+    const start = buffer.indexOf(delimiter, cursor);
+    if (start === -1) break;
+    const next = buffer.indexOf(delimiter, start + delimiter.length);
+    if (next === -1) break;
+
+    let part = buffer.subarray(start + delimiter.length, next);
+    if (part.subarray(0, 2).toString() === "--") break;
+    if (part.subarray(0, 2).toString() === "\r\n") part = part.subarray(2);
+    if (part.subarray(part.length - 2).toString() === "\r\n") part = part.subarray(0, part.length - 2);
+
+    const headerEnd = part.indexOf(Buffer.from("\r\n\r\n"));
+    if (headerEnd !== -1) {
+      const headerText = part.subarray(0, headerEnd).toString("utf8");
+      const content = part.subarray(headerEnd + 4);
+      const disposition = headerText.match(/content-disposition:\s*form-data;([^\r\n]+)/i)?.[1] || "";
+      const name = disposition.match(/name="([^"]+)"/)?.[1];
+      const fileName = disposition.match(/filename="([^"]*)"/)?.[1];
+      const fileType = headerText.match(/content-type:\s*([^\r\n]+)/i)?.[1]?.trim() || "application/octet-stream";
+
+      if (fileName && content.length > 0) {
+        if (attachments.length >= 3) throw Object.assign(new Error("最多上传 3 个文件"), { statusCode: 400 });
+        if (content.length > 20 * 1024 * 1024) throw Object.assign(new Error("单个文件不能超过 20MB"), { statusCode: 400 });
+        if (!fileType.startsWith("image/") && !fileType.startsWith("video/")) {
+          throw Object.assign(new Error("仅支持图片或视频附件"), { statusCode: 400 });
+        }
+        await mkdir(uploadDir, { recursive: true });
+        const safeName = `${Date.now()}-${randomUUID()}${extname(fileName).slice(0, 12)}`;
+        await writeFile(join(uploadDir, safeName), content);
+        attachments.push({
+          name: fileName,
+          type: fileType,
+          size: content.length,
+          url: `/uploads/${safeName}`,
+        });
+      } else if (name) {
+        fields[name] = content.toString("utf8");
+      }
+    }
+
+    cursor = next;
+  }
+
+  return { fields, attachments };
+}
+
+function normalizeFeedback(input, attachments = []) {
   const feedback = {
     id: randomUUID(),
     type: requiredText(input.type, "反馈类型"),
@@ -110,6 +189,7 @@ function normalizeFeedback(input) {
     contact: optionalText(input.contact),
     callback: requiredText(input.callback, "是否需要回访"),
     text: requiredText(input.text, "反馈内容"),
+    attachments,
     status: "待处理",
     time: new Date().toISOString(),
   };
@@ -175,4 +255,16 @@ function send(response, statusCode, body, contentType = "text/plain; charset=utf
     "Access-Control-Allow-Headers": "Content-Type,X-Admin-Key",
   });
   response.end(body);
+}
+
+function getContentType(fileName) {
+  const ext = extname(fileName).toLowerCase();
+  if ([".jpg", ".jpeg"].includes(ext)) return "image/jpeg";
+  if (ext === ".png") return "image/png";
+  if (ext === ".gif") return "image/gif";
+  if (ext === ".webp") return "image/webp";
+  if (ext === ".mp4") return "video/mp4";
+  if (ext === ".webm") return "video/webm";
+  if (ext === ".mov") return "video/quicktime";
+  return "application/octet-stream";
 }

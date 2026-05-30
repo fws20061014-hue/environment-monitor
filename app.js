@@ -60,6 +60,7 @@ const pauseIcon = document.querySelector("#pauseIcon");
 const exportButton = document.querySelector("#exportButton");
 const feedbackForm = document.querySelector("#feedbackForm");
 const feedbackList = document.querySelector("#feedbackList");
+const feedbackFiles = document.querySelector("#feedbackFiles");
 const clearFeedbackButton = document.querySelector("#clearFeedbackButton");
 const recordTable = document.querySelector("#recordTable");
 const feedbackApiBase = (window.ENV_MONITOR_CONFIG?.feedbackApiBase || "").replace(/\/$/, "");
@@ -243,7 +244,16 @@ feedbackForm.addEventListener("submit", async (event) => {
   const contact = document.querySelector("#feedbackContact").value.trim();
   const callback = document.querySelector("input[name='callback']:checked").value;
   const text = document.querySelector("#feedbackText").value.trim();
+  const files = Array.from(feedbackFiles.files || []);
   if (!location || !complaintAddress || !text) return;
+  if (files.length > 3) {
+    window.alert("最多只能上传 3 个文件。");
+    return;
+  }
+  if (files.some((file) => file.size > 20 * 1024 * 1024)) {
+    window.alert("单个文件不能超过 20MB。");
+    return;
+  }
 
   const feedback = {
     type,
@@ -261,7 +271,7 @@ feedbackForm.addEventListener("submit", async (event) => {
   submitButton.disabled = true;
   submitButton.textContent = "正在提交...";
 
-  const result = await submitFeedback(feedback);
+  const result = await submitFeedback(feedback, files);
   savedFeedback.unshift(result.feedback);
   savedFeedback = savedFeedback.slice(0, 50);
   saveFeedback();
@@ -335,6 +345,7 @@ function renderFeedback() {
           <div><dt>联系</dt><dd>${escapeHtml(item.contact || "未留联系方式")}</dd></div>
           <div><dt>状态</dt><dd>${escapeHtml(item.synced === false ? "本机暂存" : item.status || "待处理")}</dd></div>
         </dl>
+        ${renderAttachmentLinks(item.attachments)}
         <time>${time.toLocaleString("zh-CN")}</time>
       </li>`;
     })
@@ -429,7 +440,7 @@ function saveFeedback() {
   localStorage.setItem("environmentFeedback", JSON.stringify(savedFeedback));
 }
 
-async function submitFeedback(feedback) {
+async function submitFeedback(feedback, files = []) {
   if (!feedbackApiBase) {
     return {
       synced: false,
@@ -438,10 +449,17 @@ async function submitFeedback(feedback) {
   }
 
   try {
+    const formData = new FormData();
+    Object.entries(feedback).forEach(([key, value]) => {
+      formData.append(key, value);
+    });
+    files.forEach((file) => {
+      formData.append("attachments", file);
+    });
+
     const response = await fetch(`${feedbackApiBase}/api/feedback`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(feedback),
+      body: formData,
     });
     if (!response.ok) throw new Error("提交失败");
     return { synced: true, feedback: await response.json() };
@@ -451,6 +469,16 @@ async function submitFeedback(feedback) {
       feedback: { ...feedback, id: crypto.randomUUID(), synced: false },
     };
   }
+}
+
+function renderAttachmentLinks(attachments = []) {
+  if (!attachments.length) return "";
+  return `<div class="attachment-links">${attachments
+    .map((item, index) => {
+      const href = item.url?.startsWith("http") ? item.url : `${feedbackApiBase}${item.url || ""}`;
+      return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener">附件 ${index + 1}</a>`;
+    })
+    .join("")}</div>`;
 }
 
 async function loadFeedbackFromCloud() {

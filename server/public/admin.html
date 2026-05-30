@@ -258,6 +258,7 @@
                 <div><dt>回访需求</dt><dd>${escapeHtml(item.callback)}</dd></div>
                 <div><dt>提交时间</dt><dd>${new Date(item.time).toLocaleString("zh-CN")}</dd></div>
               </dl>
+              ${renderAttachments(item.attachments)}
               <div class="status-row">
                 <select data-id="${escapeHtml(item.id)}">
                   ${["待处理", "处理中", "已处理", "已回访"].map((status) => `<option value="${status}" ${status === item.status ? "selected" : ""}>${status}</option>`).join("")}
@@ -284,6 +285,13 @@
           .replaceAll(">", "&gt;")
           .replaceAll('"', "&quot;")
           .replaceAll("'", "&#039;");
+      }
+
+      function renderAttachments(attachments = []) {
+        if (!attachments.length) return "";
+        return `<div class="status-row">${attachments
+          .map((item, index) => `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener">查看附件 ${index + 1}</a>`)
+          .join("")}</div>`;
       }
     </script>
   </body>

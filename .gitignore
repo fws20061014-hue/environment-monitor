@@ -1,4 +1,5 @@
 server/data/
+server/uploads/
 *.log
 node_modules/
 desktop-admin/node_modules/

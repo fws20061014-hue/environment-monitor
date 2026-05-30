@@ -77,7 +77,7 @@ function render() {
   renderStats();
   const list = getFilteredFeedback();
   if (list.length === 0) {
-    feedbackTable.innerHTML = `<tr><td class="empty" colspan="10">暂无匹配的居民反馈</td></tr>`;
+    feedbackTable.innerHTML = `<tr><td class="empty" colspan="11">暂无匹配的居民反馈</td></tr>`;
     return;
   }
 
@@ -91,6 +91,7 @@ function render() {
         <td>${escapeHtml(item.complaintAddress || item.location || "未填写")}</td>
         <td><div class="feedback-text">${escapeHtml(item.text || "")}</div></td>
         <td>${escapeHtml(item.contact || "未填写")}</td>
+        <td>${renderAttachments(item.attachments)}</td>
         <td>${escapeHtml(item.callback || "未填写")}</td>
         <td>${escapeHtml(item.status || "待处理")}</td>
         <td>${formatTime(item.time)}</td>
@@ -138,9 +139,9 @@ function getFilteredFeedback() {
 
 async function exportCsv() {
   const list = getFilteredFeedback();
-  const rows = [["类型", "紧急程度", "所在区域", "投诉地址", "反馈内容", "联系方式", "回访", "状态", "提交时间"]];
+  const rows = [["类型", "紧急程度", "所在区域", "投诉地址", "反馈内容", "联系方式", "附件数量", "回访", "状态", "提交时间"]];
   list.forEach((item) => {
-    rows.push([item.type, item.urgency, item.location, item.complaintAddress || item.location || "", item.text, item.contact || "", item.callback, item.status, formatTime(item.time)]);
+    rows.push([item.type, item.urgency, item.location, item.complaintAddress || item.location || "", item.text, item.contact || "", item.attachments?.length || 0, item.callback, item.status, formatTime(item.time)]);
   });
   const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
   await window.desktopApi.saveFile({
@@ -149,6 +150,17 @@ async function exportCsv() {
     filters: [{ name: "CSV", extensions: ["csv"] }],
     content: `\ufeff${csv}`,
   });
+}
+
+function renderAttachments(attachments = []) {
+  if (!attachments.length) return "无";
+  const apiBase = normalizeApiBase();
+  return attachments
+    .map((item, index) => {
+      const href = item.url?.startsWith("http") ? item.url : `${apiBase}${item.url || ""}`;
+      return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener">附件 ${index + 1}</a>`;
+    })
+    .join("<br />");
 }
 
 async function exportJson() {

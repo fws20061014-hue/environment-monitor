@@ -184,7 +184,7 @@ button:disabled {
 
 table {
   width: 100%;
-  min-width: 1240px;
+  min-width: 1320px;
   border-collapse: collapse;
 }
 
@@ -208,6 +208,11 @@ th {
 td {
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+td a {
+  color: #276a62;
+  font-weight: 800;
 }
 
 .feedback-text {
