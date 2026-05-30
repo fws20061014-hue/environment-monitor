@@ -450,7 +450,7 @@ async function submitFeedback(feedback, files = []) {
   if (!feedbackApiBase) {
     return {
       synced: false,
-      feedback: { ...feedback, id: crypto.randomUUID(), synced: false },
+      feedback: { ...feedback, id: createId(), synced: false },
     };
   }
 
@@ -482,7 +482,7 @@ async function submitFeedback(feedback, files = []) {
     }
     return {
       synced: false,
-      feedback: { ...feedback, attachments: [], id: crypto.randomUUID(), synced: false },
+      feedback: { ...feedback, attachments: [], id: createId(), synced: false },
     };
   } finally {
     window.clearTimeout(timeout);
@@ -496,6 +496,13 @@ async function readErrorMessage(response) {
   } catch {
     return response.status === 413 ? "附件过大，请压缩后再上传" : `服务器返回 ${response.status}`;
   }
+}
+
+function createId() {
+  if (window.crypto?.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+  return `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function renderAttachmentLinks(attachments = []) {
