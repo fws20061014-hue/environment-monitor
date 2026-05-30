@@ -156,7 +156,7 @@ async function parseMultipart(buffer, boundary) {
       if (fileName && content.length > 0) {
         if (attachments.length >= 3) throw Object.assign(new Error("最多上传 3 个文件"), { statusCode: 400 });
         if (content.length > 20 * 1024 * 1024) throw Object.assign(new Error("单个文件不能超过 20MB"), { statusCode: 400 });
-        if (!fileType.startsWith("image/") && !fileType.startsWith("video/")) {
+        if (!isAllowedUpload(fileType, fileName)) {
           throw Object.assign(new Error("仅支持图片或视频附件"), { statusCode: 400 });
         }
         await mkdir(uploadDir, { recursive: true });
@@ -267,4 +267,10 @@ function getContentType(fileName) {
   if (ext === ".webm") return "video/webm";
   if (ext === ".mov") return "video/quicktime";
   return "application/octet-stream";
+}
+
+function isAllowedUpload(fileType, fileName) {
+  if (fileType.startsWith("image/") || fileType.startsWith("video/")) return true;
+  const ext = extname(fileName).toLowerCase();
+  return [".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp4", ".webm", ".mov"].includes(ext);
 }

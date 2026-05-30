@@ -480,6 +480,9 @@ async function submitFeedback(feedback, files = []) {
     if (error.name === "AbortError") {
       throw new Error("上传超时，请检查网络或压缩附件后重试");
     }
+    if (files.length > 0) {
+      throw error;
+    }
     return {
       synced: false,
       feedback: { ...feedback, attachments: [], id: createId(), synced: false },
