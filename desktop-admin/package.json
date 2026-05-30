@@ -1,0 +1,13 @@
+{
+  "name": "environment-feedback-admin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Windows desktop admin app for environment monitor resident feedback.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^37.8.0"
+  }
+}
