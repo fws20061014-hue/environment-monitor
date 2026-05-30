@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>环境数据记录平台</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">STM32F407ZGT6 Cloud Monitor</p>
+          <h1>环境数据记录平台</h1>
+        </div>
+        <div class="status-panel" aria-label="系统状态">
+          <span class="status-dot"></span>
+          <span id="connectionText">模拟云端数据运行中</span>
+        </div>
+      </header>
+
+      <section class="summary" aria-label="实时环境数据">
+        <article class="metric-card temperature">
+          <div class="metric-head">
+            <span class="metric-icon" aria-hidden="true">°C</span>
+            <span class="metric-name">温度</span>
+          </div>
+          <strong><span id="temperatureValue">--</span><small>°C</small></strong>
+          <p id="temperatureHint">等待数据</p>
+        </article>
+
+        <article class="metric-card humidity">
+          <div class="metric-head">
+            <span class="metric-icon" aria-hidden="true">%</span>
+            <span class="metric-name">湿度</span>
+          </div>
+          <strong><span id="humidityValue">--</span><small>%RH</small></strong>
+          <p id="humidityHint">等待数据</p>
+        </article>
+
+        <article class="metric-card noise">
+          <div class="metric-head">
+            <span class="metric-icon" aria-hidden="true">dB</span>
+            <span class="metric-name">噪声</span>
+          </div>
+          <strong><span id="noiseValue">--</span><small>dB</small></strong>
+          <p id="noiseHint">等待数据</p>
+        </article>
+
+        <article class="metric-card dust">
+          <div class="metric-head">
+            <span class="metric-icon" aria-hidden="true">PM</span>
+            <span class="metric-name">粉尘浓度</span>
+          </div>
+          <strong><span id="dustValue">--</span><small>µg/m³</small></strong>
+          <p id="dustHint">等待数据</p>
+        </article>
+      </section>
+
+      <section class="workspace">
+        <div class="chart-panel">
+          <div class="panel-title">
+            <div>
+              <p class="eyebrow">Live Trend</p>
+              <h2>最近数据变化</h2>
+            </div>
+            <div class="chart-actions">
+              <button id="exportButton" type="button" class="icon-button text-icon" title="下载 CSV 数据" aria-label="下载 CSV 数据">CSV</button>
+              <button id="pauseButton" type="button" class="icon-button" title="暂停或继续模拟刷新" aria-label="暂停或继续模拟刷新">
+                <span id="pauseIcon">Ⅱ</span>
+              </button>
+            </div>
+          </div>
+          <canvas id="trendChart" width="900" height="360" aria-label="环境数据趋势图"></canvas>
+          <div class="legend" aria-label="图例">
+            <span><i class="key temp-key"></i>温度</span>
+            <span><i class="key hum-key"></i>湿度</span>
+            <span><i class="key noise-key"></i>噪声</span>
+            <span><i class="key dust-key"></i>粉尘</span>
+          </div>
+          <div class="data-log">
+            <h3>最近记录</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>时间</th>
+                    <th>温度</th>
+                    <th>湿度</th>
+                    <th>噪声</th>
+                    <th>粉尘</th>
+                  </tr>
+                </thead>
+                <tbody id="recordTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <aside class="feedback-panel">
+          <div class="panel-title">
+            <div>
+              <p class="eyebrow">Feedback</p>
+              <h2>反馈记录</h2>
+            </div>
+          </div>
+          <form id="feedbackForm">
+            <label>
+              反馈类型
+              <select id="feedbackType" required>
+                <option value="设备异常">设备异常</option>
+                <option value="数据偏高">数据偏高</option>
+                <option value="环境备注">环境备注</option>
+              </select>
+            </label>
+            <label>
+              记录内容
+              <textarea id="feedbackText" rows="4" placeholder="例如：粉尘浓度短时间升高，现场有人施工。" required></textarea>
+            </label>
+            <button type="submit">保存反馈</button>
+          </form>
+          <ul id="feedbackList" class="feedback-list" aria-label="反馈列表"></ul>
+        </aside>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
