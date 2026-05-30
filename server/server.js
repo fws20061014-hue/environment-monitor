@@ -36,6 +36,11 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    if (request.method === "GET" && url.pathname === "/api/feedback/stats") {
+      sendJson(response, 200, summarizeFeedback(await readFeedback()));
+      return;
+    }
+
     if (request.method === "GET" && url.pathname === "/api/feedback") {
       if (!isAdmin(request, url)) {
         sendJson(response, 401, { error: "需要管理员密钥" });
@@ -140,6 +145,17 @@ async function readFeedback() {
 async function writeFeedback(list) {
   await mkdir(dataDir, { recursive: true });
   await writeFile(dataFile, JSON.stringify(list, null, 2), "utf8");
+}
+
+function summarizeFeedback(list) {
+  return {
+    total: list.length,
+    pending: list.filter((item) => (item.status || "待处理") === "待处理").length,
+    processing: list.filter((item) => item.status === "处理中").length,
+    processed: list.filter((item) => item.status === "已处理" || item.status === "已回访").length,
+    urgent: list.filter((item) => item.urgency === "紧急").length,
+    callback: list.filter((item) => item.callback === "需要回访").length,
+  };
 }
 
 function isAdmin(request, url) {

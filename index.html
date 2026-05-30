@@ -19,6 +19,68 @@
         </div>
       </header>
 
+      <section id="overviewPage" class="page-view">
+        <section class="overview-hero" aria-label="环境状态总览">
+          <div>
+            <p class="eyebrow">Environment Overview</p>
+            <h2 id="envStatusLabel">环境状态评估中</h2>
+            <p id="envStatusDetail">正在汇总温度、湿度、噪声和粉尘浓度。</p>
+            <time id="overviewUpdatedAt">更新时间：--</time>
+          </div>
+          <button id="openPlatformButton" type="button">打开反馈平台</button>
+        </section>
+
+        <section class="overview-grid">
+          <article class="overview-panel">
+            <div class="panel-title">
+              <div>
+                <p class="eyebrow">Current Signals</p>
+                <h2>实时数据摘要</h2>
+              </div>
+            </div>
+            <div class="signal-list">
+              <div><span>温度</span><strong id="overviewTemperature">-- °C</strong></div>
+              <div><span>湿度</span><strong id="overviewHumidity">-- %RH</strong></div>
+              <div><span>噪声</span><strong id="overviewNoise">-- dB</strong></div>
+              <div><span>粉尘</span><strong id="overviewDust">-- µg/m³</strong></div>
+            </div>
+          </article>
+
+          <article class="overview-panel">
+            <div class="panel-title">
+              <div>
+                <p class="eyebrow">Exception Tips</p>
+                <h2>异常原因提示</h2>
+              </div>
+            </div>
+            <ul id="causeList" class="cause-list">
+              <li>暂无异常提示</li>
+            </ul>
+          </article>
+
+          <article class="overview-panel feedback-stat-panel">
+            <div class="panel-title">
+              <div>
+                <p class="eyebrow">Feedback Statistics</p>
+                <h2>反馈统计</h2>
+              </div>
+            </div>
+            <div class="feedback-stats">
+              <div><strong id="feedbackTotalCount">0</strong><span>全部反馈</span></div>
+              <div><strong id="feedbackPendingCount">0</strong><span>未处理</span></div>
+              <div><strong id="feedbackProcessingCount">0</strong><span>处理中</span></div>
+              <div><strong id="feedbackProcessedCount">0</strong><span>已处理</span></div>
+            </div>
+          </article>
+        </section>
+      </section>
+
+      <section id="platformPage" class="page-view is-hidden">
+        <div class="platform-switch">
+          <button id="backOverviewButton" type="button">返回总览</button>
+          <time id="platformUpdatedAt">数据更新时间：--</time>
+        </div>
+
       <section class="summary" aria-label="实时环境数据">
         <article class="metric-card temperature">
           <div class="metric-head">
@@ -27,6 +89,7 @@
           </div>
           <strong><span id="temperatureValue">--</span><small>°C</small></strong>
           <p id="temperatureHint">等待数据</p>
+          <time class="metric-time">更新时间：--</time>
         </article>
 
         <article class="metric-card humidity">
@@ -36,6 +99,7 @@
           </div>
           <strong><span id="humidityValue">--</span><small>%RH</small></strong>
           <p id="humidityHint">等待数据</p>
+          <time class="metric-time">更新时间：--</time>
         </article>
 
         <article class="metric-card noise">
@@ -45,6 +109,7 @@
           </div>
           <strong><span id="noiseValue">--</span><small>dB</small></strong>
           <p id="noiseHint">等待数据</p>
+          <time class="metric-time">更新时间：--</time>
         </article>
 
         <article class="metric-card dust">
@@ -54,6 +119,7 @@
           </div>
           <strong><span id="dustValue">--</span><small>µg/m³</small></strong>
           <p id="dustHint">等待数据</p>
+          <time class="metric-time">更新时间：--</time>
         </article>
       </section>
 
@@ -164,6 +230,7 @@
           </div>
           <ul id="feedbackList" class="feedback-list" aria-label="居民反馈列表"></ul>
         </aside>
+      </section>
       </section>
     </main>
 

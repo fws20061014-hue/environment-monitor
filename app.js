@@ -4,6 +4,10 @@ const metrics = {
     unit: "°C",
     min: 18,
     max: 34,
+    watchHigh: 30,
+    alertHigh: 33,
+    watchLow: 20,
+    alertLow: 16,
     color: "#e25a49",
     valueEl: document.querySelector("#temperatureValue"),
     hintEl: document.querySelector("#temperatureHint"),
@@ -14,6 +18,10 @@ const metrics = {
     unit: "%RH",
     min: 35,
     max: 85,
+    watchHigh: 70,
+    alertHigh: 82,
+    watchLow: 40,
+    alertLow: 30,
     color: "#317acb",
     valueEl: document.querySelector("#humidityValue"),
     hintEl: document.querySelector("#humidityHint"),
@@ -24,6 +32,8 @@ const metrics = {
     unit: "dB",
     min: 30,
     max: 82,
+    watchHigh: 65,
+    alertHigh: 78,
     color: "#f3b33d",
     valueEl: document.querySelector("#noiseValue"),
     hintEl: document.querySelector("#noiseHint"),
@@ -34,6 +44,8 @@ const metrics = {
     unit: "µg/m³",
     min: 8,
     max: 120,
+    watchHigh: 75,
+    alertHigh: 100,
     color: "#2f9a66",
     valueEl: document.querySelector("#dustValue"),
     hintEl: document.querySelector("#dustHint"),
@@ -51,11 +63,35 @@ const feedbackList = document.querySelector("#feedbackList");
 const clearFeedbackButton = document.querySelector("#clearFeedbackButton");
 const recordTable = document.querySelector("#recordTable");
 const feedbackApiBase = (window.ENV_MONITOR_CONFIG?.feedbackApiBase || "").replace(/\/$/, "");
+const overviewPage = document.querySelector("#overviewPage");
+const platformPage = document.querySelector("#platformPage");
+const openPlatformButton = document.querySelector("#openPlatformButton");
+const backOverviewButton = document.querySelector("#backOverviewButton");
+const envStatusLabel = document.querySelector("#envStatusLabel");
+const envStatusDetail = document.querySelector("#envStatusDetail");
+const overviewUpdatedAt = document.querySelector("#overviewUpdatedAt");
+const platformUpdatedAt = document.querySelector("#platformUpdatedAt");
+const causeList = document.querySelector("#causeList");
+const metricCards = document.querySelectorAll(".metric-card");
+const metricTimes = document.querySelectorAll(".metric-time");
+const overviewValues = {
+  temperature: document.querySelector("#overviewTemperature"),
+  humidity: document.querySelector("#overviewHumidity"),
+  noise: document.querySelector("#overviewNoise"),
+  dust: document.querySelector("#overviewDust"),
+};
+const feedbackStatEls = {
+  total: document.querySelector("#feedbackTotalCount"),
+  pending: document.querySelector("#feedbackPendingCount"),
+  processing: document.querySelector("#feedbackProcessingCount"),
+  processed: document.querySelector("#feedbackProcessedCount"),
+};
 
 let paused = false;
 let tick = 0;
 const records = [];
 let savedFeedback = JSON.parse(localStorage.getItem("environmentFeedback") || "[]");
+let latestRecord = null;
 
 function randomBetween(min, max) {
   return min + Math.random() * (max - min);
@@ -110,18 +146,23 @@ function pushData(readings) {
     noise: Number(readings.noise),
     dust: Number(readings.dust),
   };
+  latestRecord = record;
   records.push(record);
   if (records.length > 240) records.shift();
 
-  Object.entries(metrics).forEach(([key, metric]) => {
+  Object.entries(metrics).forEach(([key, metric], index) => {
     const value = record[key];
     metric.data.push(value);
     if (metric.data.length > 28) metric.data.shift();
     metric.valueEl.textContent = value.toFixed(key === "dust" ? 0 : 1);
     metric.hintEl.textContent = getHint(key, value);
+    metricCards[index].classList.remove("level-good", "level-watch", "level-alert");
+    metricCards[index].classList.add(`level-${getMetricLevel(key, value)}`);
+    metricTimes[index].textContent = `更新时间：${record.time.toLocaleTimeString("zh-CN")}`;
   });
 
   renderRecords();
+  renderOverview(record);
 }
 
 function drawChart() {
@@ -225,6 +266,7 @@ feedbackForm.addEventListener("submit", async (event) => {
   savedFeedback = savedFeedback.slice(0, 50);
   saveFeedback();
   renderFeedback();
+  renderFeedbackStats();
   feedbackForm.reset();
   submitButton.disabled = false;
   submitButton.textContent = result.synced ? "已提交到云端" : "已暂存到本机";
@@ -239,6 +281,19 @@ clearFeedbackButton.addEventListener("click", () => {
   savedFeedback = [];
   saveFeedback();
   renderFeedback();
+  renderFeedbackStats();
+});
+
+openPlatformButton.addEventListener("click", () => {
+  overviewPage.classList.add("is-hidden");
+  platformPage.classList.remove("is-hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+backOverviewButton.addEventListener("click", () => {
+  platformPage.classList.add("is-hidden");
+  overviewPage.classList.remove("is-hidden");
+  window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 function renderRecords() {
@@ -286,6 +341,90 @@ function renderFeedback() {
     .join("");
 }
 
+function renderOverview(record) {
+  overviewValues.temperature.textContent = `${record.temperature.toFixed(1)} °C`;
+  overviewValues.humidity.textContent = `${record.humidity.toFixed(1)} %RH`;
+  overviewValues.noise.textContent = `${record.noise.toFixed(1)} dB`;
+  overviewValues.dust.textContent = `${record.dust.toFixed(0)} µg/m³`;
+
+  const timeText = `更新时间：${record.time.toLocaleString("zh-CN")}`;
+  overviewUpdatedAt.textContent = timeText;
+  platformUpdatedAt.textContent = `数据${timeText}`;
+
+  const levels = Object.keys(metrics).map((key) => getMetricLevel(key, record[key]));
+  const status = levels.includes("alert") ? "alert" : levels.includes("watch") ? "watch" : "good";
+  const hero = overviewPage.querySelector(".overview-hero");
+  hero.classList.remove("status-good", "status-watch", "status-alert");
+  hero.classList.add(`status-${status}`);
+
+  if (status === "alert") {
+    envStatusLabel.textContent = "环境状态异常";
+    envStatusDetail.textContent = "当前至少一项指标达到异常阈值，建议尽快核查现场并优先处理相关反馈。";
+  } else if (status === "watch") {
+    envStatusLabel.textContent = "环境需关注";
+    envStatusDetail.textContent = "部分指标出现偏高或偏低趋势，建议持续观察并结合居民反馈判断原因。";
+  } else {
+    envStatusLabel.textContent = "环境状态良好";
+    envStatusDetail.textContent = "当前温度、湿度、噪声和粉尘浓度均处于正常观察范围。";
+  }
+
+  renderCauseTips(record);
+}
+
+function renderCauseTips(record) {
+  const tips = [];
+  if (getMetricLevel("temperature", record.temperature) !== "good") {
+    tips.push(record.temperature > metrics.temperature.watchHigh ? "温度偏高：可能与设备散热、日照强、通风不足有关。" : "温度偏低：可能与天气变化、测点阴影或通风过强有关。");
+  }
+  if (getMetricLevel("humidity", record.humidity) !== "good") {
+    tips.push(record.humidity > metrics.humidity.watchHigh ? "湿度偏高：建议关注降雨、绿化浇灌、排水或通风情况。" : "湿度偏低：可能为空气干燥或测点附近热源影响。");
+  }
+  if (getMetricLevel("noise", record.noise) !== "good") {
+    tips.push("噪声偏高：建议排查施工、车辆鸣笛、广场活动或设备运转声。");
+  }
+  if (getMetricLevel("dust", record.dust) !== "good") {
+    tips.push("粉尘偏高：建议检查道路扬尘、施工点、垃圾投放点或大风天气影响。");
+  }
+  causeList.innerHTML = (tips.length ? tips : ["暂无异常提示，建议保持常规巡查。"]).map((tip) => `<li>${escapeHtml(tip)}</li>`).join("");
+}
+
+function getMetricLevel(key, value) {
+  const metric = metrics[key];
+  if ((metric.alertHigh !== undefined && value >= metric.alertHigh) || (metric.alertLow !== undefined && value <= metric.alertLow)) return "alert";
+  if ((metric.watchHigh !== undefined && value >= metric.watchHigh) || (metric.watchLow !== undefined && value <= metric.watchLow)) return "watch";
+  return "good";
+}
+
+async function renderFeedbackStats() {
+  const stats = await getFeedbackStats();
+  feedbackStatEls.total.textContent = stats.total;
+  feedbackStatEls.pending.textContent = stats.pending;
+  feedbackStatEls.processing.textContent = stats.processing;
+  feedbackStatEls.processed.textContent = stats.processed;
+}
+
+async function getFeedbackStats() {
+  if (feedbackApiBase) {
+    try {
+      const response = await fetch(`${feedbackApiBase}/api/feedback/stats`);
+      if (response.ok) return await response.json();
+    } catch {
+      // Fall back to local recent feedback below.
+    }
+  }
+
+  return summarizeFeedback(savedFeedback);
+}
+
+function summarizeFeedback(list) {
+  return {
+    total: list.length,
+    pending: list.filter((item) => (item.status || "待处理") === "待处理" || item.synced === false).length,
+    processing: list.filter((item) => item.status === "处理中").length,
+    processed: list.filter((item) => item.status === "已处理" || item.status === "已回访").length,
+  };
+}
+
 function saveFeedback() {
   localStorage.setItem("environmentFeedback", JSON.stringify(savedFeedback));
 }
@@ -325,6 +464,7 @@ async function loadFeedbackFromCloud() {
     savedFeedback = await response.json();
     saveFeedback();
     renderFeedback();
+    renderFeedbackStats();
   } catch {
     // Keep local cached feedback visible if the cloud service is unavailable.
   }
@@ -364,6 +504,7 @@ for (let i = 0; i < 16; i += 1) {
 }
 
 renderFeedback();
+renderFeedbackStats();
 loadFeedbackFromCloud();
 drawChart();
 setInterval(refresh, 2200);
