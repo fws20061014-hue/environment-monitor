@@ -186,6 +186,63 @@ h2 {
   background: rgba(255, 244, 242, 0.9);
 }
 
+.weather-strip {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(420px, 1.4fr) auto;
+  align-items: center;
+  gap: 18px;
+  margin-top: 16px;
+  border: 1px solid rgba(245, 177, 67, 0.34);
+  border-radius: 8px;
+  padding: 18px 20px;
+  background:
+    linear-gradient(135deg, rgba(255, 248, 218, 0.94), rgba(226, 247, 255, 0.9)),
+    var(--panel);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.weather-strip h2 {
+  margin-top: 4px;
+  font-size: 1.35rem;
+}
+
+.weather-strip p,
+.weather-strip time {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.weather-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.weather-metrics div {
+  min-height: 72px;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.weather-metrics span,
+.location-info span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.weather-metrics strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 1.18rem;
+  white-space: nowrap;
+}
+
 .overview-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -200,6 +257,128 @@ h2 {
 
 .feedback-stat-panel {
   grid-column: 1 / -1;
+}
+
+.location-map-panel {
+  grid-column: 1 / -1;
+}
+
+.panel-title > span {
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #276a62;
+  font-size: 0.82rem;
+  font-weight: 900;
+  background: rgba(47, 154, 102, 0.12);
+}
+
+.mini-map {
+  position: relative;
+  min-height: 260px;
+  margin-top: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(39, 106, 98, 0.14);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(225, 246, 233, 0.96), rgba(227, 242, 255, 0.95));
+}
+
+.map-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(39, 106, 98, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(39, 106, 98, 0.08) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+.map-road {
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(39, 106, 98, 0.08);
+}
+
+.road-main {
+  left: -8%;
+  right: -8%;
+  top: 48%;
+  height: 28px;
+  transform: rotate(-7deg);
+}
+
+.road-side {
+  left: 54%;
+  top: -16%;
+  width: 24px;
+  height: 132%;
+  transform: rotate(18deg);
+}
+
+.map-zone {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(39, 106, 98, 0.14);
+  border-radius: 8px;
+  color: #276a62;
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.zone-a {
+  left: 12%;
+  top: 18%;
+  width: 132px;
+  height: 76px;
+}
+
+.zone-b {
+  right: 12%;
+  bottom: 18%;
+  width: 150px;
+  height: 86px;
+}
+
+.map-pin {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 20px;
+  height: 20px;
+  border: 4px solid #ffffff;
+  border-radius: 50% 50% 50% 0;
+  background: #e25a49;
+  box-shadow: 0 10px 26px rgba(226, 90, 73, 0.32);
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.map-pin::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.location-info {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.location-info div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.location-info strong {
+  display: block;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
 }
 
 .construction-panel {
@@ -809,9 +988,15 @@ form button {
     display: grid;
   }
 
+  .weather-strip {
+    grid-template-columns: 1fr;
+  }
+
   .overview-grid,
   .signal-list,
-  .feedback-stats {
+  .feedback-stats,
+  .weather-metrics,
+  .location-info {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -828,7 +1013,9 @@ form button {
 
   .overview-grid,
   .signal-list,
-  .feedback-stats {
+  .feedback-stats,
+  .weather-metrics,
+  .location-info {
     grid-template-columns: 1fr;
   }
 

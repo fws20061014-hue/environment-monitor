@@ -81,6 +81,21 @@ const overviewValues = {
   noise: document.querySelector("#overviewNoise"),
   dust: document.querySelector("#overviewDust"),
 };
+const weatherEls = {
+  city: document.querySelector("#weatherCity"),
+  summary: document.querySelector("#weatherSummary"),
+  condition: document.querySelector("#weatherCondition"),
+  temperature: document.querySelector("#weatherTemperature"),
+  humidity: document.querySelector("#weatherHumidity"),
+  wind: document.querySelector("#weatherWind"),
+  updatedAt: document.querySelector("#weatherUpdatedAt"),
+};
+const locationEls = {
+  status: document.querySelector("#locationStatus"),
+  name: document.querySelector("#locationName"),
+  source: document.querySelector("#locationSource"),
+  weatherLink: document.querySelector("#weatherLinkStatus"),
+};
 const constructionEls = {
   panel: document.querySelector("#constructionPanel"),
   badge: document.querySelector("#constructionBadge"),
@@ -394,6 +409,37 @@ function renderOverview(record) {
 
   renderCauseTips(record);
   renderConstructionStatus(record);
+  renderWeatherLocation(record);
+}
+
+function renderWeatherLocation(record) {
+  const weather = getMockWeather(record);
+  weatherEls.city.textContent = weather.city;
+  weatherEls.summary.textContent = weather.summary;
+  weatherEls.condition.textContent = weather.condition;
+  weatherEls.temperature.textContent = `${weather.temperature.toFixed(0)} °C`;
+  weatherEls.humidity.textContent = `${weather.humidity.toFixed(0)}%`;
+  weatherEls.wind.textContent = weather.wind;
+  weatherEls.updatedAt.textContent = `更新时间：${record.time.toLocaleString("zh-CN")}`;
+
+  locationEls.status.textContent = "模拟定位";
+  locationEls.name.textContent = "默认监测区域";
+  locationEls.source.textContent = "静态地图预览";
+  locationEls.weatherLink.textContent = "待接入天气 API";
+}
+
+function getMockWeather(record) {
+  const isDusty = record.dust >= metrics.dust.watchHigh;
+  const isNoisy = record.noise >= metrics.noise.watchHigh;
+  const condition = isDusty ? "多云" : isNoisy ? "晴间多云" : "晴";
+  return {
+    city: "本地天气",
+    condition,
+    temperature: Math.max(18, Math.min(34, record.temperature + 2.4)),
+    humidity: Math.max(35, Math.min(82, record.humidity - 4)),
+    wind: isDusty ? "北风 3级" : "东南风 2级",
+    summary: isDusty ? "空气扩散一般，建议关注粉尘变化" : "晴朗，适合巡查和户外采样",
+  };
 }
 
 function renderConstructionStatus(record) {

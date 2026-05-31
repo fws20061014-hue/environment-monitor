@@ -30,6 +30,21 @@
           <button id="openPlatformButton" type="button">打开反馈平台</button>
         </section>
 
+        <section class="weather-strip" aria-label="今日天气">
+          <div>
+            <p class="eyebrow">Local Weather</p>
+            <h2 id="weatherCity">本地天气</h2>
+            <p id="weatherSummary">晴朗，适合巡查和户外采样</p>
+          </div>
+          <div class="weather-metrics">
+            <div><span>天气</span><strong id="weatherCondition">晴</strong></div>
+            <div><span>气温</span><strong id="weatherTemperature">26 °C</strong></div>
+            <div><span>湿度</span><strong id="weatherHumidity">48%</strong></div>
+            <div><span>风向</span><strong id="weatherWind">东南风 2级</strong></div>
+          </div>
+          <time id="weatherUpdatedAt">更新时间：--</time>
+        </section>
+
         <section class="overview-grid">
           <article class="overview-panel">
             <div class="panel-title">
@@ -90,6 +105,29 @@
               <div><strong id="feedbackPendingCount">0</strong><span>未处理</span></div>
               <div><strong id="feedbackProcessingCount">0</strong><span>处理中</span></div>
               <div><strong id="feedbackProcessedCount">0</strong><span>已处理</span></div>
+            </div>
+          </article>
+
+          <article class="overview-panel location-map-panel">
+            <div class="panel-title">
+              <div>
+                <p class="eyebrow">Location Map</p>
+                <h2>定位小地图</h2>
+              </div>
+              <span id="locationStatus">待接入定位</span>
+            </div>
+            <div class="mini-map" aria-label="定位地图预览">
+              <div class="map-grid"></div>
+              <div class="map-road road-main"></div>
+              <div class="map-road road-side"></div>
+              <div class="map-zone zone-a">监测点 A</div>
+              <div class="map-zone zone-b">居民区</div>
+              <div class="map-pin" aria-hidden="true"></div>
+            </div>
+            <div class="location-info">
+              <div><span>当前位置</span><strong id="locationName">默认监测区域</strong></div>
+              <div><span>坐标来源</span><strong id="locationSource">等待地图 API</strong></div>
+              <div><span>天气联动</span><strong id="weatherLinkStatus">未接入</strong></div>
             </div>
           </article>
         </section>
