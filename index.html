@@ -58,6 +58,26 @@
             </ul>
           </article>
 
+          <article class="overview-panel construction-panel" id="constructionPanel">
+            <div class="panel-title">
+              <div>
+                <p class="eyebrow">Construction Status</p>
+                <h2>是否正在施工</h2>
+              </div>
+            </div>
+            <div class="construction-status">
+              <span id="constructionBadge" class="construction-badge">休息中</span>
+              <strong id="constructionTitle">当前未检测到施工影响</strong>
+              <p id="constructionDetail">噪声和粉尘浓度处于平稳范围，暂无明显施工扰动。</p>
+              <time id="constructionUpdatedAt">更新时间：--</time>
+            </div>
+            <div class="construction-options" aria-label="施工状态选项">
+              <span data-state="resting">休息中</span>
+              <span data-state="working">施工中</span>
+              <span data-state="completed">完工</span>
+            </div>
+          </article>
+
           <article class="overview-panel feedback-stat-panel">
             <div class="panel-title">
               <div>

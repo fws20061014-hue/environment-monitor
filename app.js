@@ -81,6 +81,13 @@ const overviewValues = {
   noise: document.querySelector("#overviewNoise"),
   dust: document.querySelector("#overviewDust"),
 };
+const constructionEls = {
+  panel: document.querySelector("#constructionPanel"),
+  badge: document.querySelector("#constructionBadge"),
+  title: document.querySelector("#constructionTitle"),
+  detail: document.querySelector("#constructionDetail"),
+  updatedAt: document.querySelector("#constructionUpdatedAt"),
+};
 const feedbackStatEls = {
   total: document.querySelector("#feedbackTotalCount"),
   pending: document.querySelector("#feedbackPendingCount"),
@@ -386,6 +393,47 @@ function renderOverview(record) {
   }
 
   renderCauseTips(record);
+  renderConstructionStatus(record);
+}
+
+function renderConstructionStatus(record) {
+  const state = getConstructionState(record);
+  const copy = {
+    resting: {
+      badge: "休息中",
+      title: "当前未检测到施工影响",
+      detail: "噪声和粉尘浓度处于平稳范围，暂无明显施工扰动。",
+    },
+    working: {
+      badge: "施工中",
+      title: "疑似存在现场施工活动",
+      detail: "噪声或粉尘浓度升高，建议结合投诉地址和现场巡查确认施工点位。",
+    },
+    completed: {
+      badge: "完工",
+      title: "施工影响正在回落",
+      detail: "近期数据较为平稳，可继续观察粉尘和噪声是否恢复到正常范围。",
+    },
+  }[state];
+
+  constructionEls.panel.classList.remove("state-resting", "state-working", "state-completed");
+  constructionEls.panel.classList.add(`state-${state}`);
+  constructionEls.badge.textContent = copy.badge;
+  constructionEls.title.textContent = copy.title;
+  constructionEls.detail.textContent = copy.detail;
+  constructionEls.updatedAt.textContent = `更新时间：${record.time.toLocaleString("zh-CN")}`;
+}
+
+function getConstructionState(record) {
+  if (record.noise >= metrics.noise.watchHigh || record.dust >= metrics.dust.watchHigh) {
+    return "working";
+  }
+  if (records.length >= 8) {
+    const recent = records.slice(-8, -1);
+    const recentHigh = recent.some((item) => item.noise >= metrics.noise.watchHigh || item.dust >= metrics.dust.watchHigh);
+    if (recentHigh) return "completed";
+  }
+  return "resting";
 }
 
 function renderCauseTips(record) {
