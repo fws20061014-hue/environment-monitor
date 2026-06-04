@@ -29,6 +29,10 @@ const workerDetail = document.querySelector("#workerDetail");
 const weatherEls = {
   board: document.querySelector("#weatherBoard"),
   visual: document.querySelector("#weatherVisual"),
+  tempCard: document.querySelector("#weatherTempCard"),
+  humidityCard: document.querySelector("#weatherHumidityCard"),
+  windCard: document.querySelector("#weatherWindCard"),
+  timeCard: document.querySelector("#weatherTimeCard"),
   text: document.querySelector("#weatherText"),
   tip: document.querySelector("#weatherTip"),
   temp: document.querySelector("#weatherTemp"),
@@ -140,6 +144,11 @@ function renderWeather(now) {
   weatherEls.windNote.textContent = wind >= 3 ? "风速偏高" : "天气数据";
   weatherEls.time.textContent = now.toLocaleTimeString("zh-CN");
   weatherEls.source.textContent = "动态模拟";
+
+  weatherEls.tempCard.className = `weather-card weather-data-card ${getTempCardClass(outdoorTemp)}`;
+  weatherEls.humidityCard.className = `weather-card weather-data-card ${getHumidityCardClass(humidity)}`;
+  weatherEls.windCard.className = `weather-card weather-data-card ${getWindCardClass(wind)}`;
+  weatherEls.timeCard.className = "weather-card weather-data-card time-active";
 }
 
 function getWeatherState(temp, humidity, wind, dust) {
@@ -176,6 +185,22 @@ function getWeatherState(temp, humidity, wind, dust) {
     label: "晴",
     tip: "适合室外作业，注意补水",
   };
+}
+
+function getTempCardClass(temp) {
+  if (temp >= 29) return "temp-hot";
+  if (temp >= 27 || temp <= 20) return "temp-watch";
+  return "temp-normal";
+}
+
+function getHumidityCardClass(humidity) {
+  if (humidity >= 58) return "humidity-wet";
+  if (humidity <= 38) return "humidity-dry";
+  return "humidity-normal";
+}
+
+function getWindCardClass(wind) {
+  return wind >= 3 ? "wind-strong" : "wind-normal";
 }
 
 function renderSiteEnvironment() {

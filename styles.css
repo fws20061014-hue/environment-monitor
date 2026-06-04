@@ -195,6 +195,161 @@ h2 {
   gap: 14px;
 }
 
+.weather-data-card {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.mini-weather-icon {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: inset 0 0 0 1px rgba(23, 43, 53, 0.06);
+}
+
+.temp-mini .thermo-line {
+  position: absolute;
+  left: 22px;
+  bottom: 15px;
+  width: 8px;
+  height: 26px;
+  border-radius: 999px;
+  background: #df4b42;
+  transform-origin: bottom;
+  animation: tempRise 2.1s ease-in-out infinite;
+}
+
+.temp-mini .thermo-bulb {
+  position: absolute;
+  left: 17px;
+  bottom: 8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #df4b42;
+}
+
+.temp-normal .temp-mini .thermo-line,
+.temp-normal .temp-mini .thermo-bulb {
+  background: var(--green);
+}
+
+.temp-watch .temp-mini .thermo-line,
+.temp-watch .temp-mini .thermo-bulb {
+  background: var(--yellow);
+}
+
+.temp-hot .temp-mini .thermo-line,
+.temp-hot .temp-mini .thermo-bulb {
+  background: var(--red);
+}
+
+.humidity-mini .drop-main,
+.humidity-mini .drop-small {
+  position: absolute;
+  border-radius: 50% 50% 50% 0;
+  background: var(--blue);
+  transform: rotate(-45deg);
+}
+
+.humidity-mini .drop-main {
+  left: 16px;
+  top: 12px;
+  width: 24px;
+  height: 24px;
+  animation: dropPulse 1.8s ease-in-out infinite;
+}
+
+.humidity-mini .drop-small {
+  left: 30px;
+  top: 30px;
+  width: 10px;
+  height: 10px;
+  opacity: 0.6;
+  animation: dropPulse 1.8s ease-in-out infinite 0.25s;
+}
+
+.humidity-dry .humidity-mini .drop-main,
+.humidity-dry .humidity-mini .drop-small {
+  background: #b8c6cc;
+}
+
+.humidity-wet .humidity-mini .drop-main,
+.humidity-wet .humidity-mini .drop-small {
+  background: #2878c7;
+}
+
+.wind-mini {
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  padding: 13px 8px;
+}
+
+.wind-mini span {
+  display: block;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--blue);
+  animation: windSweep 1.6s ease-in-out infinite;
+}
+
+.wind-mini span:nth-child(1) {
+  width: 34px;
+}
+
+.wind-mini span:nth-child(2) {
+  width: 24px;
+  animation-delay: 0.16s;
+}
+
+.wind-mini span:nth-child(3) {
+  width: 30px;
+  animation-delay: 0.32s;
+}
+
+.wind-strong .wind-mini span {
+  background: var(--yellow);
+  animation-duration: 0.9s;
+}
+
+.time-mini .clock-face {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  width: 30px;
+  height: 30px;
+  border: 3px solid #2878c7;
+  border-radius: 50%;
+}
+
+.time-mini .clock-hand {
+  position: absolute;
+  left: 24px;
+  top: 15px;
+  width: 3px;
+  height: 18px;
+  border-radius: 999px;
+  background: #2878c7;
+  transform-origin: 50% 10px;
+  animation: clockSpin 6s linear infinite;
+}
+
+.temp-watch,
+.humidity-wet,
+.wind-strong {
+  border-color: rgba(242, 180, 63, 0.42) !important;
+}
+
+.temp-hot {
+  border-color: rgba(223, 75, 66, 0.42) !important;
+  background: linear-gradient(180deg, #ffffff, #fff1f0) !important;
+}
+
 .weather-visual {
   position: relative;
   width: 70px;
@@ -905,6 +1060,47 @@ h2 {
 
   50% {
     transform: translate(-8px, -5px);
+  }
+}
+
+@keyframes tempRise {
+  0%,
+  100% {
+    transform: scaleY(0.72);
+  }
+
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes dropPulse {
+  0%,
+  100% {
+    transform: rotate(-45deg) scale(0.92);
+  }
+
+  50% {
+    transform: rotate(-45deg) scale(1.08);
+  }
+}
+
+@keyframes windSweep {
+  0%,
+  100% {
+    transform: translateX(0);
+    opacity: 0.76;
+  }
+
+  50% {
+    transform: translateX(7px);
+    opacity: 1;
+  }
+}
+
+@keyframes clockSpin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

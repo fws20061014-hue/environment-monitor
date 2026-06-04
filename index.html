@@ -37,25 +37,50 @@
               <small id="weatherTip">适合室外作业，注意补水</small>
             </div>
           </article>
-          <article class="weather-card">
-            <span>室外气温</span>
-            <strong id="weatherTemp">-- °C</strong>
-            <small id="weatherTempNote">天气数据</small>
+          <article class="weather-card weather-data-card" id="weatherTempCard">
+            <div class="mini-weather-icon temp-mini" aria-hidden="true">
+              <span class="thermo-line"></span>
+              <span class="thermo-bulb"></span>
+            </div>
+            <div>
+              <span>室外气温</span>
+              <strong id="weatherTemp">-- °C</strong>
+              <small id="weatherTempNote">天气数据</small>
+            </div>
           </article>
-          <article class="weather-card">
-            <span>空气湿度</span>
-            <strong id="weatherHumidity">--%</strong>
-            <small id="weatherHumidityNote">天气数据</small>
+          <article class="weather-card weather-data-card" id="weatherHumidityCard">
+            <div class="mini-weather-icon humidity-mini" aria-hidden="true">
+              <span class="drop-main"></span>
+              <span class="drop-small"></span>
+            </div>
+            <div>
+              <span>空气湿度</span>
+              <strong id="weatherHumidity">--%</strong>
+              <small id="weatherHumidityNote">天气数据</small>
+            </div>
           </article>
-          <article class="weather-card">
-            <span>风速</span>
-            <strong id="weatherWind">-- m/s</strong>
-            <small id="weatherWindNote">天气数据</small>
+          <article class="weather-card weather-data-card" id="weatherWindCard">
+            <div class="mini-weather-icon wind-mini" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div>
+              <span>风速</span>
+              <strong id="weatherWind">-- m/s</strong>
+              <small id="weatherWindNote">天气数据</small>
+            </div>
           </article>
-          <article class="weather-card">
-            <span>更新时间</span>
-            <strong id="weatherTime">--</strong>
-            <small id="weatherSource">本地模拟</small>
+          <article class="weather-card weather-data-card" id="weatherTimeCard">
+            <div class="mini-weather-icon time-mini" aria-hidden="true">
+              <span class="clock-face"></span>
+              <span class="clock-hand"></span>
+            </div>
+            <div>
+              <span>更新时间</span>
+              <strong id="weatherTime">--</strong>
+              <small id="weatherSource">本地模拟</small>
+            </div>
           </article>
         </section>
 
