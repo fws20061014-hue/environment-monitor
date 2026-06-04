@@ -20,31 +20,42 @@
       </header>
 
       <section id="dashboardPage" class="page-view">
-        <section class="weather-board" aria-label="天气类数据">
-          <article>
-            <span>天气</span>
-            <strong id="weatherText">晴</strong>
-            <small id="weatherTip">适合室外作业，注意补水</small>
+        <section class="weather-board weather-dynamic" id="weatherBoard" aria-label="天气类数据">
+          <article class="weather-card weather-main-card">
+            <div class="weather-visual" id="weatherVisual" aria-hidden="true">
+              <span class="sun-core"></span>
+              <span class="cloud cloud-one"></span>
+              <span class="cloud cloud-two"></span>
+              <span class="rain rain-one"></span>
+              <span class="rain rain-two"></span>
+              <span class="dust dust-one"></span>
+              <span class="dust dust-two"></span>
+            </div>
+            <div>
+              <span>当前天气</span>
+              <strong id="weatherText">晴</strong>
+              <small id="weatherTip">适合室外作业，注意补水</small>
+            </div>
           </article>
-          <article>
+          <article class="weather-card">
             <span>室外气温</span>
             <strong id="weatherTemp">-- °C</strong>
-            <small>天气数据</small>
+            <small id="weatherTempNote">天气数据</small>
           </article>
-          <article>
+          <article class="weather-card">
             <span>空气湿度</span>
             <strong id="weatherHumidity">--%</strong>
-            <small>天气数据</small>
+            <small id="weatherHumidityNote">天气数据</small>
           </article>
-          <article>
+          <article class="weather-card">
             <span>风速</span>
             <strong id="weatherWind">-- m/s</strong>
-            <small>天气数据</small>
+            <small id="weatherWindNote">天气数据</small>
           </article>
-          <article>
+          <article class="weather-card">
             <span>更新时间</span>
             <strong id="weatherTime">--</strong>
-            <small>本地模拟</small>
+            <small id="weatherSource">本地模拟</small>
           </article>
         </section>
 

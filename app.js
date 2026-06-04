@@ -27,12 +27,18 @@ const workerDialog = document.querySelector("#workerDialog");
 const workerDetail = document.querySelector("#workerDetail");
 
 const weatherEls = {
+  board: document.querySelector("#weatherBoard"),
+  visual: document.querySelector("#weatherVisual"),
   text: document.querySelector("#weatherText"),
   tip: document.querySelector("#weatherTip"),
   temp: document.querySelector("#weatherTemp"),
+  tempNote: document.querySelector("#weatherTempNote"),
   humidity: document.querySelector("#weatherHumidity"),
+  humidityNote: document.querySelector("#weatherHumidityNote"),
   wind: document.querySelector("#weatherWind"),
+  windNote: document.querySelector("#weatherWindNote"),
   time: document.querySelector("#weatherTime"),
+  source: document.querySelector("#weatherSource"),
 };
 
 const siteEls = {
@@ -120,14 +126,56 @@ function renderWeather(now) {
   const outdoorTemp = 24 + Math.sin(tick / 8) * 4 + randomBetween(-0.4, 0.4);
   const humidity = 48 + Math.cos(tick / 7) * 9 + randomBetween(-1, 1);
   const wind = 2.4 + Math.sin(tick / 6) * 0.8;
-  const isHot = outdoorTemp >= 29;
+  const avgDust = average(workers.map((worker) => worker.dust));
+  const weather = getWeatherState(outdoorTemp, humidity, wind, avgDust);
 
-  weatherEls.text.textContent = isHot ? "晴热" : "晴";
-  weatherEls.tip.textContent = isHot ? "气温偏高，建议缩短连续作业时间" : "适合室外作业，注意补水";
+  weatherEls.board.className = `weather-board weather-dynamic weather-${weather.className}`;
+  weatherEls.text.textContent = weather.label;
+  weatherEls.tip.textContent = weather.tip;
   weatherEls.temp.textContent = `${outdoorTemp.toFixed(1)} °C`;
   weatherEls.humidity.textContent = `${humidity.toFixed(0)}%`;
   weatherEls.wind.textContent = `${wind.toFixed(1)} m/s`;
+  weatherEls.tempNote.textContent = outdoorTemp >= 29 ? "高温关注" : "天气数据";
+  weatherEls.humidityNote.textContent = humidity >= 58 ? "湿度偏高" : "天气数据";
+  weatherEls.windNote.textContent = wind >= 3 ? "风速偏高" : "天气数据";
   weatherEls.time.textContent = now.toLocaleTimeString("zh-CN");
+  weatherEls.source.textContent = "动态模拟";
+}
+
+function getWeatherState(temp, humidity, wind, dust) {
+  if (dust >= 118 || wind >= 3.1) {
+    return {
+      className: "dusty",
+      label: "扬尘",
+      tip: "风速或粉尘偏高，建议开启降尘措施",
+    };
+  }
+  if (humidity >= 58) {
+    return {
+      className: "humid",
+      label: "湿热",
+      tip: "湿度偏高，注意防滑和通风",
+    };
+  }
+  if (temp >= 29) {
+    return {
+      className: "hot",
+      label: "晴热",
+      tip: "气温偏高，建议缩短连续作业时间",
+    };
+  }
+  if (humidity >= 53 || temp <= 23.5) {
+    return {
+      className: "cloudy",
+      label: "多云",
+      tip: "天气平稳，注意持续观察风速变化",
+    };
+  }
+  return {
+    className: "sunny",
+    label: "晴",
+    tip: "适合室外作业，注意补水",
+  };
 }
 
 function renderSiteEnvironment() {
