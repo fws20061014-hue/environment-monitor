@@ -132,6 +132,8 @@ function renderWeather(now) {
   const wind = 2.4 + Math.sin(tick / 6) * 0.8;
   const avgDust = average(workers.map((worker) => worker.dust));
   const weather = getWeatherState(outdoorTemp, humidity, wind, avgDust);
+  const fogOpacity = getFogOpacity(humidity);
+  const windDuration = Math.max(0.75, 2.2 - wind * 0.38).toFixed(2);
 
   weatherEls.board.className = `weather-board weather-dynamic weather-${weather.className}`;
   weatherEls.text.textContent = weather.label;
@@ -139,16 +141,19 @@ function renderWeather(now) {
   weatherEls.temp.textContent = `${outdoorTemp.toFixed(1)} °C`;
   weatherEls.humidity.textContent = `${humidity.toFixed(0)}%`;
   weatherEls.wind.textContent = `${wind.toFixed(1)} m/s`;
-  weatherEls.tempNote.textContent = outdoorTemp >= 29 ? "高温关注" : "天气数据";
-  weatherEls.humidityNote.textContent = humidity >= 58 ? "湿度偏高" : "天气数据";
-  weatherEls.windNote.textContent = wind >= 3 ? "风速偏高" : "天气数据";
+  weatherEls.tempNote.textContent = getTempNote(outdoorTemp);
+  weatherEls.humidityNote.textContent = humidity >= 57.5 ? "湿度偏高" : "湿度平稳";
+  weatherEls.windNote.textContent = wind >= 3 ? "风速偏高" : "风速平稳";
   weatherEls.time.textContent = now.toLocaleTimeString("zh-CN");
-  weatherEls.source.textContent = "动态模拟";
+  weatherEls.source.textContent = `动态模拟 · ${getTimePeriodLabel(now)}`;
 
   weatherEls.tempCard.className = `weather-card weather-data-card ${getTempCardClass(outdoorTemp)}`;
   weatherEls.humidityCard.className = `weather-card weather-data-card ${getHumidityCardClass(humidity)}`;
+  weatherEls.humidityCard.style.setProperty("--fog-opacity", fogOpacity.toFixed(2));
+  weatherEls.humidityCard.style.setProperty("--fog-duration", `${Math.max(1.2, 3.4 - fogOpacity * 2).toFixed(1)}s`);
   weatherEls.windCard.className = `weather-card weather-data-card ${getWindCardClass(wind)}`;
-  weatherEls.timeCard.className = "weather-card weather-data-card time-active";
+  weatherEls.windCard.style.setProperty("--wind-duration", `${windDuration}s`);
+  weatherEls.timeCard.className = `weather-card weather-data-card time-active ${getTimeCardClass(now)}`;
 }
 
 function getWeatherState(temp, humidity, wind, dust) {
@@ -159,14 +164,14 @@ function getWeatherState(temp, humidity, wind, dust) {
       tip: "风速或粉尘偏高，建议开启降尘措施",
     };
   }
-  if (humidity >= 58) {
+  if (humidity >= 57.5) {
     return {
       className: "humid",
       label: "湿热",
       tip: "湿度偏高，注意防滑和通风",
     };
   }
-  if (temp >= 29) {
+  if (temp >= 27.5) {
     return {
       className: "hot",
       label: "晴热",
@@ -188,19 +193,45 @@ function getWeatherState(temp, humidity, wind, dust) {
 }
 
 function getTempCardClass(temp) {
-  if (temp >= 29) return "temp-hot";
-  if (temp >= 27 || temp <= 20) return "temp-watch";
-  return "temp-normal";
+  if (temp <= 22.5) return "temp-cold";
+  if (temp >= 27.5) return "temp-hot";
+  return "temp-mild";
+}
+
+function getTempNote(temp) {
+  if (temp <= 22.5) return "低温提示";
+  if (temp >= 27.5) return "高温关注";
+  return "适宜作业";
 }
 
 function getHumidityCardClass(humidity) {
-  if (humidity >= 58) return "humidity-wet";
+  if (humidity >= 57.5) return "humidity-wet";
   if (humidity <= 38) return "humidity-dry";
   return "humidity-normal";
 }
 
+function getFogOpacity(humidity) {
+  return clamp((humidity - 36) / 26, 0.05, 0.9);
+}
+
 function getWindCardClass(wind) {
   return wind >= 3 ? "wind-strong" : "wind-normal";
+}
+
+function getTimeCardClass(date) {
+  const hour = date.getHours();
+  if (hour >= 5 && hour < 8) return "time-dawn";
+  if (hour >= 8 && hour < 17) return "time-day";
+  if (hour >= 17 && hour < 20) return "time-dusk";
+  return "time-night";
+}
+
+function getTimePeriodLabel(date) {
+  const hour = date.getHours();
+  if (hour >= 5 && hour < 8) return "朝阳时段";
+  if (hour >= 8 && hour < 17) return "白天时段";
+  if (hour >= 17 && hour < 20) return "晚霞时段";
+  return "夜间时段";
 }
 
 function renderSiteEnvironment() {
