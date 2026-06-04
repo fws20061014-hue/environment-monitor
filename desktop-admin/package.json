@@ -1,16 +1,16 @@
 {
-  "name": "environment-feedback-admin",
+  "name": "helmet-worker-admin",
   "version": "1.0.0",
   "private": true,
-  "description": "Windows desktop admin app for environment monitor resident feedback.",
+  "description": "Windows desktop admin app for smart helmet worker monitoring.",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --win"
   },
   "build": {
-    "appId": "cn.fws.environment.feedback.admin",
-    "productName": "居民反馈管理",
+    "appId": "cn.fws.helmet.worker.admin",
+    "productName": "安全帽工人状态管理员",
     "directories": {
       "output": "dist"
     },

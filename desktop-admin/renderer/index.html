@@ -3,94 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>居民反馈管理</title>
+    <title>安全帽工人状态管理员</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <main class="app-shell">
       <header class="hero">
         <div>
-          <p class="eyebrow">Environment Monitor Admin</p>
-          <h1>居民反馈管理</h1>
+          <p class="eyebrow">Helmet Admin Console</p>
+          <h1>安全帽工人状态管理员</h1>
         </div>
-        <div class="connection-state" id="connectionState">
-          <span></span>
-          未连接
-        </div>
+        <div class="live-state"><span></span>异常自动置顶</div>
       </header>
 
-      <section class="toolbar" aria-label="连接设置">
-        <label>
-          服务器地址
-          <input id="apiBaseInput" type="url" placeholder="http://122.152.220.132" />
-        </label>
-        <label>
-          管理员密钥
-          <input id="adminKeyInput" type="password" placeholder="输入管理员密钥" />
-        </label>
-        <button id="loadButton" type="button">读取反馈</button>
+      <section class="stats" aria-label="工人状态统计">
+        <article><span>全部工人</span><strong id="totalCount">20</strong></article>
+        <article><span>异常工人</span><strong id="abnormalCount">0</strong></article>
+        <article><span>摔倒警告</span><strong id="fallCount">0</strong></article>
+        <article><span>更新时间</span><strong id="updateTime">--</strong></article>
       </section>
 
-      <section class="stats" aria-label="反馈统计">
+      <section class="toolbar">
         <div>
-          <strong id="totalCount">0</strong>
-          <span>全部反馈</span>
+          <p class="eyebrow">Worker Windows</p>
+          <h2>全部工人独立小窗</h2>
         </div>
-        <div>
-          <strong id="pendingCount">0</strong>
-          <span>待处理</span>
-        </div>
-        <div>
-          <strong id="urgentCount">0</strong>
-          <span>紧急反馈</span>
-        </div>
-        <div>
-          <strong id="callbackCount">0</strong>
-          <span>需要回访</span>
-        </div>
+        <span>体温 ≥ 37.5 °C 或粉尘 ≥ 120 µg/m³ 视为异常</span>
       </section>
 
-      <section class="controls" aria-label="筛选与导出">
-        <input id="searchInput" type="search" placeholder="搜索类型、区域、投诉地址、内容或联系方式" />
-        <select id="statusFilter">
-          <option value="">全部状态</option>
-          <option value="待处理">待处理</option>
-          <option value="处理中">处理中</option>
-          <option value="已处理">已处理</option>
-          <option value="已回访">已回访</option>
-        </select>
-        <select id="urgencyFilter">
-          <option value="">全部紧急程度</option>
-          <option value="一般">一般</option>
-          <option value="较急">较急</option>
-          <option value="紧急">紧急</option>
-        </select>
-        <button id="exportCsvButton" type="button">导出 CSV</button>
-        <button id="exportJsonButton" type="button">导出 JSON</button>
-      </section>
-
-      <section class="content">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>类型</th>
-                <th>紧急程度</th>
-                <th>所在区域</th>
-                <th>投诉地址</th>
-                <th>反馈内容</th>
-                <th>联系方式</th>
-                <th>附件</th>
-                <th>回访</th>
-                <th>状态</th>
-                <th>提交时间</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody id="feedbackTable"></tbody>
-          </table>
-        </div>
-      </section>
+      <section id="workerGrid" class="worker-grid" aria-label="全部工人状态"></section>
     </main>
 
     <script src="renderer.js"></script>

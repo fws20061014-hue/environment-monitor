@@ -3,300 +3,101 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>环境数据记录平台</title>
+    <title>智能安全帽后台控制台</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="shell">
+    <main class="console-shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">STM32F407ZGT6 Cloud Monitor</p>
-          <h1>环境数据记录平台</h1>
+          <p class="eyebrow">Integrated Helmet Console</p>
+          <h1>智能安全帽后台控制台</h1>
         </div>
-        <div class="status-panel" aria-label="系统状态">
-          <span class="status-dot"></span>
-          <span id="connectionText">模拟云端数据运行中</span>
+        <div class="top-actions">
+          <span class="live-state"><i></i>模拟数据运行中</span>
+          <button id="toWorkersPage" type="button">查看全部工人</button>
         </div>
       </header>
 
-      <section id="overviewPage" class="page-view">
-        <section class="overview-hero" aria-label="环境状态总览">
-          <div>
-            <p class="eyebrow">Environment Overview</p>
-            <h2 id="envStatusLabel">环境状态评估中</h2>
-            <p id="envStatusDetail">正在汇总温度、湿度、噪声和粉尘浓度。</p>
-            <time id="overviewUpdatedAt">更新时间：--</time>
-          </div>
-          <button id="openPlatformButton" type="button">打开反馈平台</button>
+      <section id="dashboardPage" class="page-view">
+        <section class="weather-board" aria-label="天气类数据">
+          <article>
+            <span>天气</span>
+            <strong id="weatherText">晴</strong>
+            <small id="weatherTip">适合室外作业，注意补水</small>
+          </article>
+          <article>
+            <span>室外气温</span>
+            <strong id="weatherTemp">-- °C</strong>
+            <small>天气数据</small>
+          </article>
+          <article>
+            <span>空气湿度</span>
+            <strong id="weatherHumidity">--%</strong>
+            <small>天气数据</small>
+          </article>
+          <article>
+            <span>风速</span>
+            <strong id="weatherWind">-- m/s</strong>
+            <small>天气数据</small>
+          </article>
+          <article>
+            <span>更新时间</span>
+            <strong id="weatherTime">--</strong>
+            <small>本地模拟</small>
+          </article>
         </section>
 
-        <section class="weather-strip" aria-label="今日天气">
-          <div>
-            <p class="eyebrow">Local Weather</p>
-            <h2 id="weatherCity">本地天气</h2>
-            <p id="weatherSummary">晴朗，适合巡查和户外采样</p>
+        <section class="priority-panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Priority Workers</p>
+              <h2>状况较差工人监测窗口</h2>
+            </div>
+            <span id="priorityCount">0 人异常</span>
           </div>
-          <div class="weather-metrics">
-            <div><span>天气</span><strong id="weatherCondition">晴</strong></div>
-            <div><span>气温</span><strong id="weatherTemperature">26 °C</strong></div>
-            <div><span>湿度</span><strong id="weatherHumidity">48%</strong></div>
-            <div><span>风向</span><strong id="weatherWind">东南风 2级</strong></div>
-          </div>
-          <time id="weatherUpdatedAt">更新时间：--</time>
+          <div id="priorityWorkerGrid" class="worker-grid priority-grid" aria-label="状况较差工人"></div>
         </section>
 
-        <section class="overview-grid">
-          <article class="overview-panel">
-            <div class="panel-title">
-              <div>
-                <p class="eyebrow">Current Signals</p>
-                <h2>实时数据摘要</h2>
-              </div>
-            </div>
-            <div class="signal-list">
-              <div><span>温度</span><strong id="overviewTemperature">-- °C</strong></div>
-              <div><span>湿度</span><strong id="overviewHumidity">-- %RH</strong></div>
-              <div><span>噪声</span><strong id="overviewNoise">-- dB</strong></div>
-              <div><span>粉尘</span><strong id="overviewDust">-- µg/m³</strong></div>
-            </div>
+        <section class="site-board" aria-label="工地环境数据">
+          <article>
+            <span>工地气温</span>
+            <strong id="siteTemp">-- °C</strong>
+            <small id="siteTempState">正常</small>
           </article>
-
-          <article class="overview-panel">
-            <div class="panel-title">
-              <div>
-                <p class="eyebrow">Exception Tips</p>
-                <h2>异常原因提示</h2>
-              </div>
-            </div>
-            <ul id="causeList" class="cause-list">
-              <li>暂无异常提示</li>
-            </ul>
+          <article>
+            <span>工地粉尘浓度</span>
+            <strong id="siteDust">-- µg/m³</strong>
+            <small id="siteDustState">正常</small>
           </article>
-
-          <article class="overview-panel construction-panel" id="constructionPanel">
-            <div class="panel-title">
-              <div>
-                <p class="eyebrow">Construction Status</p>
-                <h2>是否正在施工</h2>
-              </div>
-            </div>
-            <div class="construction-status">
-              <span id="constructionBadge" class="construction-badge">休息中</span>
-              <strong id="constructionTitle">当前未检测到施工影响</strong>
-              <p id="constructionDetail">噪声和粉尘浓度处于平稳范围，暂无明显施工扰动。</p>
-              <time id="constructionUpdatedAt">更新时间：--</time>
-            </div>
-            <div class="construction-options" aria-label="施工状态选项">
-              <span data-state="resting">休息中</span>
-              <span data-state="working">施工中</span>
-              <span data-state="completed">完工</span>
-            </div>
-          </article>
-
-          <article class="overview-panel feedback-stat-panel">
-            <div class="panel-title">
-              <div>
-                <p class="eyebrow">Feedback Statistics</p>
-                <h2>反馈统计</h2>
-              </div>
-            </div>
-            <div class="feedback-stats">
-              <div><strong id="feedbackTotalCount">0</strong><span>全部反馈</span></div>
-              <div><strong id="feedbackPendingCount">0</strong><span>未处理</span></div>
-              <div><strong id="feedbackProcessingCount">0</strong><span>处理中</span></div>
-              <div><strong id="feedbackProcessedCount">0</strong><span>已处理</span></div>
-            </div>
-          </article>
-
-          <article class="overview-panel location-map-panel">
-            <div class="panel-title">
-              <div>
-                <p class="eyebrow">Location Map</p>
-                <h2>定位小地图</h2>
-              </div>
-              <span id="locationStatus">待接入定位</span>
-            </div>
-            <div class="mini-map" aria-label="定位地图预览">
-              <div class="map-grid"></div>
-              <div class="map-road road-main"></div>
-              <div class="map-road road-side"></div>
-              <div class="map-zone zone-a">监测点 A</div>
-              <div class="map-zone zone-b">居民区</div>
-              <div class="map-pin" aria-hidden="true"></div>
-            </div>
-            <div class="location-info">
-              <div><span>当前位置</span><strong id="locationName">默认监测区域</strong></div>
-              <div><span>坐标来源</span><strong id="locationSource">等待地图 API</strong></div>
-              <div><span>天气联动</span><strong id="weatherLinkStatus">未接入</strong></div>
-            </div>
+          <article>
+            <span>摔倒警告</span>
+            <strong id="fallSummary">0 起</strong>
+            <small>自动进入上方窗口</small>
           </article>
         </section>
       </section>
 
-      <section id="platformPage" class="page-view is-hidden">
-        <div class="platform-switch">
-          <button id="backOverviewButton" type="button">返回总览</button>
-          <time id="platformUpdatedAt">数据更新时间：--</time>
+      <section id="workersPage" class="page-view is-hidden">
+        <div class="subbar">
+          <button id="backDashboard" type="button">返回首页</button>
+          <div>
+            <p class="eyebrow">All Workers</p>
+            <h2>全部工人状态</h2>
+          </div>
+          <span id="workerPageTime">更新时间：--</span>
         </div>
 
-      <section class="summary" aria-label="实时环境数据">
-        <article class="metric-card temperature">
-          <div class="metric-head">
-            <span class="metric-icon" aria-hidden="true">°C</span>
-            <span class="metric-name">温度</span>
-          </div>
-          <strong><span id="temperatureValue">--</span><small>°C</small></strong>
-          <p id="temperatureHint">等待数据</p>
-          <time class="metric-time">更新时间：--</time>
-        </article>
-
-        <article class="metric-card humidity">
-          <div class="metric-head">
-            <span class="metric-icon" aria-hidden="true">%</span>
-            <span class="metric-name">湿度</span>
-          </div>
-          <strong><span id="humidityValue">--</span><small>%RH</small></strong>
-          <p id="humidityHint">等待数据</p>
-          <time class="metric-time">更新时间：--</time>
-        </article>
-
-        <article class="metric-card noise">
-          <div class="metric-head">
-            <span class="metric-icon" aria-hidden="true">dB</span>
-            <span class="metric-name">噪声</span>
-          </div>
-          <strong><span id="noiseValue">--</span><small>dB</small></strong>
-          <p id="noiseHint">等待数据</p>
-          <time class="metric-time">更新时间：--</time>
-        </article>
-
-        <article class="metric-card dust">
-          <div class="metric-head">
-            <span class="metric-icon" aria-hidden="true">PM</span>
-            <span class="metric-name">粉尘浓度</span>
-          </div>
-          <strong><span id="dustValue">--</span><small>µg/m³</small></strong>
-          <p id="dustHint">等待数据</p>
-          <time class="metric-time">更新时间：--</time>
-        </article>
-      </section>
-
-      <section class="workspace">
-        <div class="chart-panel">
-          <div class="panel-title">
-            <div>
-              <p class="eyebrow">Live Trend</p>
-              <h2>最近数据变化</h2>
-            </div>
-            <div class="chart-actions">
-              <button id="exportButton" type="button" class="icon-button text-icon" title="下载 CSV 数据" aria-label="下载 CSV 数据">CSV</button>
-              <button id="pauseButton" type="button" class="icon-button" title="暂停或继续模拟刷新" aria-label="暂停或继续模拟刷新">
-                <span id="pauseIcon">Ⅱ</span>
-              </button>
-            </div>
-          </div>
-          <canvas id="trendChart" width="900" height="360" aria-label="环境数据趋势图"></canvas>
-          <div class="legend" aria-label="图例">
-            <span><i class="key temp-key"></i>温度</span>
-            <span><i class="key hum-key"></i>湿度</span>
-            <span><i class="key noise-key"></i>噪声</span>
-            <span><i class="key dust-key"></i>粉尘</span>
-          </div>
-          <div class="data-log">
-            <h3>最近记录</h3>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>时间</th>
-                    <th>温度</th>
-                    <th>湿度</th>
-                    <th>噪声</th>
-                    <th>粉尘</th>
-                  </tr>
-                </thead>
-                <tbody id="recordTable"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <aside class="feedback-panel">
-          <div class="panel-title">
-            <div>
-              <p class="eyebrow">Resident Feedback</p>
-              <h2>居民反馈</h2>
-            </div>
-          </div>
-
-          <form id="feedbackForm" class="resident-form">
-            <div class="form-grid">
-              <label>
-                反馈类型
-                <select id="feedbackType" required>
-                  <option value="空气异味">空气异味</option>
-                  <option value="粉尘较多">粉尘较多</option>
-                  <option value="噪声扰民">噪声扰民</option>
-                  <option value="温湿度不适">温湿度不适</option>
-                  <option value="设备异常">设备异常</option>
-                  <option value="其他建议">其他建议</option>
-                </select>
-              </label>
-
-              <label>
-                紧急程度
-                <select id="feedbackUrgency" required>
-                  <option value="一般">一般</option>
-                  <option value="较急">较急</option>
-                  <option value="紧急">紧急</option>
-                </select>
-              </label>
-            </div>
-
-            <label>
-              所在区域
-              <input id="feedbackLocation" type="text" placeholder="例如：阳光小区3号楼、东侧广场" required />
-            </label>
-
-            <label>
-              投诉地址
-              <input id="feedbackAddress" type="text" placeholder="请填写具体点位，例如：2单元门口垃圾桶旁" required />
-            </label>
-
-            <label>
-              联系方式
-              <input id="feedbackContact" type="text" placeholder="手机号或门牌号，可选" />
-            </label>
-
-            <fieldset class="callback-field">
-              <legend>是否需要回访</legend>
-              <label><input type="radio" name="callback" value="需要回访" checked /> 需要回访</label>
-              <label><input type="radio" name="callback" value="无需回访" /> 无需回访</label>
-            </fieldset>
-
-            <label>
-              反馈内容
-              <textarea id="feedbackText" rows="4" placeholder="请描述时间、现象、影响范围，例如：晚上八点后广场附近噪声较大，影响休息。" required></textarea>
-            </label>
-
-            <label>
-              上传图片或视频
-              <input id="feedbackFiles" type="file" accept="image/*,video/*" multiple />
-              <span class="field-note">最多 3 个文件，单个不超过 20MB，可用于现场照片、短视频取证。</span>
-            </label>
-
-            <button type="submit">提交居民反馈</button>
-          </form>
-
-          <div class="feedback-toolbar">
-            <strong>近期反馈</strong>
-            <button id="clearFeedbackButton" type="button">清空本机记录</button>
-          </div>
-          <ul id="feedbackList" class="feedback-list" aria-label="居民反馈列表"></ul>
-        </aside>
-      </section>
+        <section id="allWorkerGrid" class="worker-grid all-worker-grid" aria-label="全部工人"></section>
       </section>
     </main>
+
+    <dialog id="workerDialog" class="worker-dialog">
+      <form method="dialog">
+        <button class="dialog-close" value="close" aria-label="关闭">×</button>
+      </form>
+      <div id="workerDetail"></div>
+    </dialog>
 
     <script src="config.js" charset="UTF-8"></script>
     <script src="app.js" charset="UTF-8"></script>

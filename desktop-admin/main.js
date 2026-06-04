@@ -8,7 +8,7 @@ function createWindow() {
     height: 780,
     minWidth: 920,
     minHeight: 620,
-    title: "居民反馈管理",
+    title: "安全帽工人状态管理员",
     backgroundColor: "#eef6f2",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),

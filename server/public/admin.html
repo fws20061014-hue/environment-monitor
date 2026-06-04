@@ -3,338 +3,402 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>居民反馈管理</title>
+    <title>安全帽工人状态管理员</title>
     <style>
       :root {
         color-scheme: light;
-        --ink: #17313b;
-        --muted: #58706d;
-        --line: #d9e4e1;
-        --green: #2f9a66;
-        --blue: #2f82c7;
-        --red: #d9534f;
+        --bg: #f4f7f8;
         --panel: #ffffff;
-        --bg: #eef6f2;
+        --soft: #f9fbfc;
+        --ink: #172b35;
+        --muted: #657983;
+        --line: #dce6ea;
+        --green: #1f9d68;
+        --blue: #2878c7;
+        --yellow: #f2b43f;
+        --red: #df4b42;
+        --shadow: 0 14px 34px rgba(23, 43, 53, 0.08);
       }
 
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
 
       body {
         margin: 0;
-        font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
         color: var(--ink);
-        background: linear-gradient(135deg, #f7fbf6, var(--bg));
+        font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+        background: var(--bg);
       }
 
       main {
-        width: min(1180px, calc(100% - 28px));
+        width: min(1460px, calc(100% - 28px));
         margin: 0 auto;
-        padding: 28px 0;
+        padding: 24px 0 32px;
       }
 
       header,
-      .toolbar,
-      .card {
+      .stats,
+      .card,
+      .toolbar {
         border: 1px solid var(--line);
         border-radius: 8px;
         background: var(--panel);
-        box-shadow: 0 18px 50px rgba(23, 49, 59, 0.08);
+        box-shadow: var(--shadow);
       }
 
       header {
-        padding: 22px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 20px 22px;
       }
 
-      h1 {
-        margin: 0;
-        font-size: clamp(1.8rem, 4vw, 3.2rem);
+      .eyebrow {
+        margin: 0 0 6px;
+        color: #1d6b62;
+        font-size: 0.78rem;
+        font-weight: 900;
+        text-transform: uppercase;
       }
 
-      p {
-        margin: 8px 0 0;
+      h1 { margin: 0; font-size: clamp(2rem, 4vw, 3.4rem); }
+      h2 { margin: 0; font-size: 1.2rem; }
+
+      .live {
+        display: inline-flex;
+        align-items: center;
+        min-height: 38px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 0 12px;
         color: var(--muted);
+        font-weight: 900;
+        background: var(--soft);
+      }
+
+      .live i {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+        background: var(--green);
+        box-shadow: 0 0 0 5px rgba(31, 157, 104, 0.12);
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+        padding: 14px;
+      }
+
+      .stats article {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+        background: var(--soft);
+      }
+
+      .stats span,
+      .metric span {
+        display: block;
+        color: var(--muted);
+        font-weight: 800;
+      }
+
+      .stats strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 1.7rem;
       }
 
       .toolbar {
-        display: grid;
-        grid-template-columns: 1fr auto auto;
-        gap: 12px;
-        margin: 16px 0;
-        padding: 16px;
-      }
-
-      input,
-      select,
-      button {
-        min-height: 42px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 0 12px;
-        font: inherit;
-      }
-
-      button {
-        color: white;
-        font-weight: 800;
-        background: var(--green);
-        cursor: pointer;
-      }
-
-      .list {
-        display: grid;
-        gap: 12px;
-      }
-
-      .card {
-        padding: 16px;
-      }
-
-      .card-head {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 14px;
+        margin-top: 16px;
+        padding: 14px;
+      }
+
+      input {
+        min-height: 40px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 0 10px;
+        font: inherit;
+        font-weight: 800;
+      }
+
+      #workerGrid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 12px;
+        margin-top: 16px;
+      }
+
+      .card {
+        min-height: 206px;
+        padding: 14px;
+        transition: border-color 0.2s ease, transform 0.2s ease;
+      }
+
+      .card:hover { transform: translateY(-2px); }
+      .card.warning { border-color: rgba(242, 180, 63, 0.72); }
+      .card.danger { border-color: rgba(223, 75, 66, 0.72); background: linear-gradient(180deg, #fff, #fff1f0); }
+
+      .card-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .name-input {
+        width: 100%;
       }
 
       .badge {
         border-radius: 999px;
-        padding: 4px 10px;
-        font-size: 0.82rem;
+        padding: 6px 9px;
+        color: #1d6b62;
+        font-size: 0.76rem;
         font-weight: 900;
-        background: rgba(47, 154, 102, 0.14);
-        color: var(--green);
+        background: rgba(31, 157, 104, 0.12);
+        white-space: nowrap;
       }
 
-      .badge.warning {
-        color: #8a5d12;
-        background: #fff3d4;
-      }
+      .warning .badge { color: #8a5b08; background: rgba(242, 180, 63, 0.18); }
+      .danger .badge { color: #b83028; background: rgba(223, 75, 66, 0.15); }
 
-      .badge.danger {
-        color: var(--red);
-        background: #ffe1de;
-      }
-
-      dl {
+      .body {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 10px;
-        margin: 14px 0 0;
-      }
-
-      dt {
-        color: #2f6f68;
-        font-size: 0.78rem;
-        font-weight: 900;
-      }
-
-      dd {
-        margin: 4px 0 0;
-        color: var(--muted);
-        overflow-wrap: anywhere;
-      }
-
-      .status-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
+        grid-template-columns: 70px minmax(0, 1fr);
+        gap: 12px;
         margin-top: 14px;
       }
 
-      .attachment-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 10px;
-        margin-top: 14px;
+      .worker-icon {
+        position: relative;
+        width: 70px;
+        height: 88px;
+        border-radius: 8px;
+        background: #eef4f6;
       }
 
-      .attachment-card {
+      .worker-icon::before {
+        content: "";
+        position: absolute;
+        left: 16px;
+        top: 30px;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: #ffd6b0;
+      }
+
+      .worker-icon::after {
+        content: "";
+        position: absolute;
+        left: 10px;
+        top: 18px;
+        width: 50px;
+        height: 22px;
+        border-radius: 22px 22px 8px 8px;
+        background: var(--yellow);
+      }
+
+      .worker-icon span {
+        position: absolute;
+        left: 12px;
+        bottom: 8px;
+        width: 46px;
+        height: 28px;
+        border-radius: 8px 8px 4px 4px;
+        background: linear-gradient(135deg, var(--blue), var(--green));
+      }
+
+      .metrics {
+        display: grid;
+        gap: 8px;
+      }
+
+      .metric {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        min-height: 46px;
         border: 1px solid var(--line);
         border-radius: 8px;
-        padding: 10px;
-        background: #f8fbfa;
+        padding: 8px 10px;
+        background: rgba(255, 255, 255, 0.72);
       }
 
-      .attachment-card img,
-      .attachment-card video {
-        display: block;
-        width: 100%;
-        max-height: 180px;
-        border-radius: 6px;
-        object-fit: cover;
-        background: #e8f0ee;
-      }
+      .metric strong { font-size: 1.08rem; }
+      .bang { color: var(--red); font-weight: 900; }
 
-      .attachment-card a {
-        display: inline-block;
-        margin-top: 8px;
-        color: var(--blue);
-        font-weight: 800;
-        text-decoration: none;
-      }
-
-      .status-row select {
-        min-width: 130px;
-      }
-
-      .empty {
-        padding: 30px;
+      .fall {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 34px;
+        margin-top: 12px;
         color: var(--muted);
-        text-align: center;
+        font-weight: 900;
+      }
+
+      .fall.bad { color: var(--red); }
+
+      .triangle {
+        width: 0;
+        height: 0;
+        border-left: 13px solid transparent;
+        border-right: 13px solid transparent;
+        border-bottom: 23px solid var(--red);
+        position: relative;
+      }
+
+      .triangle::after {
+        content: "!";
+        position: absolute;
+        top: 7px;
+        left: -3px;
+        color: white;
+        font-size: 0.8rem;
+        font-weight: 900;
+      }
+
+      @media (max-width: 1180px) {
+        #workerGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       }
 
       @media (max-width: 760px) {
-        .toolbar,
-        dl {
-          grid-template-columns: 1fr;
-        }
-
-        .card-head,
-        .status-row {
-          align-items: stretch;
-          flex-direction: column;
-        }
+        header,
+        .toolbar { align-items: stretch; flex-direction: column; }
+        #workerGrid,
+        .stats { grid-template-columns: 1fr; }
       }
     </style>
   </head>
   <body>
     <main>
       <header>
-        <h1>居民反馈管理</h1>
-        <p>输入管理员密钥后，可以查看居民提交的反馈并更新处理状态。</p>
+        <div>
+          <p class="eyebrow">Helmet Admin</p>
+          <h1>安全帽工人状态管理员</h1>
+        </div>
+        <span class="live"><i></i>异常自动置顶</span>
       </header>
 
-      <section class="toolbar">
-        <input id="adminKey" type="password" placeholder="管理员密钥" />
-        <select id="statusFilter">
-          <option value="">全部状态</option>
-          <option value="待处理">待处理</option>
-          <option value="处理中">处理中</option>
-          <option value="已处理">已处理</option>
-          <option value="已回访">已回访</option>
-        </select>
-        <button id="loadButton" type="button">读取反馈</button>
+      <section class="stats" aria-label="工人状态统计">
+        <article><span>全部工人</span><strong id="totalCount">20</strong></article>
+        <article><span>异常工人</span><strong id="abnormalCount">0</strong></article>
+        <article><span>摔倒警告</span><strong id="fallCount">0</strong></article>
+        <article><span>更新时间</span><strong id="updateTime">--</strong></article>
       </section>
 
-      <section id="feedbackList" class="list"></section>
+      <section class="toolbar">
+        <div>
+          <p class="eyebrow">All Worker Windows</p>
+          <h2>全部工人独立小窗</h2>
+        </div>
+        <span class="live">体温 ≥ 37.5 °C 或粉尘 ≥ 120 µg/m³ 视为异常</span>
+      </section>
+
+      <section id="workerGrid" aria-label="全部工人状态"></section>
     </main>
 
     <script>
-      const adminKeyInput = document.querySelector("#adminKey");
-      const statusFilter = document.querySelector("#statusFilter");
-      const loadButton = document.querySelector("#loadButton");
-      const feedbackList = document.querySelector("#feedbackList");
-      let feedback = [];
+      const COUNT = 20;
+      const TEMP_LIMIT = 37.5;
+      const DUST_LIMIT = 120;
+      const savedNames = JSON.parse(localStorage.getItem("helmetAdminWorkerNames") || "{}");
+      const workers = Array.from({ length: COUNT }, (_, index) => ({
+        id: index + 1,
+        name: savedNames[index + 1] || `工人 ${String(index + 1).padStart(2, "0")}`,
+        temperature: 36.1 + Math.random() * 1.3,
+        dust: 42 + Math.random() * 88,
+        fallen: index === 1,
+        heartRate: 72 + Math.round(Math.random() * 22),
+        battery: 76 + Math.round(Math.random() * 20),
+      }));
 
-      adminKeyInput.value = localStorage.getItem("feedbackAdminKey") || "";
-      loadButton.addEventListener("click", loadFeedback);
-      statusFilter.addEventListener("change", render);
+      let tick = 0;
+      const grid = document.querySelector("#workerGrid");
+      const abnormalCount = document.querySelector("#abnormalCount");
+      const fallCount = document.querySelector("#fallCount");
+      const updateTime = document.querySelector("#updateTime");
 
-      async function loadFeedback() {
-        const key = adminKeyInput.value.trim();
-        if (!key) {
-          alert("请先输入管理员密钥");
-          return;
-        }
-        localStorage.setItem("feedbackAdminKey", key);
-        const response = await fetch(`/api/feedback?key=${encodeURIComponent(key)}`);
-        if (!response.ok) {
-          alert("读取失败，请检查管理员密钥");
-          return;
-        }
-        feedback = await response.json();
+      function update() {
+        tick += 1;
+        workers.forEach((worker, index) => {
+          worker.temperature = clamp(worker.temperature + Math.sin((tick + index) / 5) * 0.08 + random(-0.12, 0.14), 35.6, 39.3);
+          worker.dust = clamp(worker.dust + Math.cos((tick + index) / 4) * 3.4 + random(-6, 9), 24, 188);
+          if (tick % 9 === 0 && Math.random() < 0.16) worker.fallen = !worker.fallen;
+          if (index === 5 && tick % 12 < 7) worker.dust = Math.max(worker.dust, 134);
+          if (index === 11 && tick % 15 < 6) worker.temperature = Math.max(worker.temperature, 37.9);
+        });
         render();
       }
 
-      async function updateStatus(id, status) {
-        const key = adminKeyInput.value.trim();
-        const response = await fetch(`/api/feedback/${encodeURIComponent(id)}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Admin-Key": key,
-          },
-          body: JSON.stringify({ status }),
-        });
-        if (!response.ok) {
-          alert("状态更新失败");
-          return;
-        }
-        await loadFeedback();
-      }
-
       function render() {
-        const filter = statusFilter.value;
-        const list = filter ? feedback.filter((item) => item.status === filter) : feedback;
-        if (list.length === 0) {
-          feedbackList.innerHTML = `<div class="card empty">暂无反馈记录</div>`;
-          return;
-        }
-
-        feedbackList.innerHTML = list
-          .map((item) => {
-            const urgencyClass = item.urgency === "紧急" ? "danger" : item.urgency === "较急" ? "warning" : "";
-            return `<article class="card">
-              <div class="card-head">
-                <div>
-                  <strong>${escapeHtml(item.type)}</strong>
-                  <p>${escapeHtml(item.text)}</p>
-                </div>
-                <span class="badge ${urgencyClass}">${escapeHtml(item.urgency)}</span>
-              </div>
-              <dl>
-                <div><dt>所在区域</dt><dd>${escapeHtml(item.location)}</dd></div>
-                <div><dt>投诉地址</dt><dd>${escapeHtml(item.complaintAddress || item.location)}</dd></div>
-                <div><dt>联系方式</dt><dd>${escapeHtml(item.contact || "未填写")}</dd></div>
-                <div><dt>回访需求</dt><dd>${escapeHtml(item.callback)}</dd></div>
-                <div><dt>提交时间</dt><dd>${new Date(item.time).toLocaleString("zh-CN")}</dd></div>
-              </dl>
-              ${renderAttachments(item.attachments)}
-              <div class="status-row">
-                <select data-id="${escapeHtml(item.id)}">
-                  ${["待处理", "处理中", "已处理", "已回访"].map((status) => `<option value="${status}" ${status === item.status ? "selected" : ""}>${status}</option>`).join("")}
-                </select>
-                <button type="button" data-update="${escapeHtml(item.id)}">更新状态</button>
-              </div>
-            </article>`;
-          })
-          .join("");
-
-        feedbackList.querySelectorAll("[data-update]").forEach((button) => {
-          button.addEventListener("click", () => {
-            const id = button.dataset.update;
-            const select = feedbackList.querySelector(`select[data-id="${CSS.escape(id)}"]`);
-            updateStatus(id, select.value);
+        const ranked = [...workers].sort((a, b) => risk(b).score - risk(a).score || a.id - b.id);
+        abnormalCount.textContent = workers.filter((worker) => risk(worker).level !== "normal").length;
+        fallCount.textContent = workers.filter((worker) => worker.fallen).length;
+        updateTime.textContent = new Date().toLocaleTimeString("zh-CN");
+        grid.innerHTML = ranked.map(cardHtml).join("");
+        grid.querySelectorAll("input").forEach((input) => {
+          input.addEventListener("change", () => {
+            const worker = workers.find((item) => item.id === Number(input.dataset.id));
+            worker.name = input.value.trim() || `工人 ${String(worker.id).padStart(2, "0")}`;
+            localStorage.setItem("helmetAdminWorkerNames", JSON.stringify(Object.fromEntries(workers.map((item) => [item.id, item.name]))));
+            render();
           });
         });
       }
 
-      function escapeHtml(value) {
-        return String(value || "")
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;")
-          .replaceAll("'", "&#039;");
+      function cardHtml(worker) {
+        const state = risk(worker);
+        const tempBang = worker.temperature >= TEMP_LIMIT ? '<span class="bang">!</span>' : "";
+        const dustBang = worker.dust >= DUST_LIMIT ? '<span class="bang">!</span>' : "";
+        const fallIcon = worker.fallen ? '<span class="triangle"></span>' : "";
+        return `<article class="card ${state.level}">
+          <div class="card-head">
+            <input class="name-input" data-id="${worker.id}" value="${escapeHtml(worker.name)}" />
+            <span class="badge">${state.label}</span>
+          </div>
+          <div class="body">
+            <div class="worker-icon"><span></span></div>
+            <div class="metrics">
+              <div class="metric"><span>体温</span><strong>${worker.temperature.toFixed(1)} °C ${tempBang}</strong></div>
+              <div class="metric"><span>附近粉尘</span><strong>${worker.dust.toFixed(0)} µg/m³ ${dustBang}</strong></div>
+            </div>
+          </div>
+          <div class="fall ${worker.fallen ? "bad" : ""}">${fallIcon}<span>${worker.fallen ? "摔倒警告" : "未摔倒"}</span></div>
+        </article>`;
       }
 
-      function renderAttachments(attachments = []) {
-        if (!attachments.length) return "";
-        return `<div class="attachment-grid">${attachments
-          .map((item, index) => {
-            const url = escapeHtml(item.url);
-            const title = escapeHtml(item.name || `附件 ${index + 1}`);
-            const preview = item.type?.startsWith("image/")
-              ? `<img src="${url}" alt="${title}" />`
-              : item.type?.startsWith("video/")
-                ? `<video src="${url}" controls preload="metadata"></video>`
-                : "";
-            return `<div class="attachment-card">${preview}<a href="${url}" target="_blank" rel="noopener">查看附件 ${index + 1}</a></div>`;
-          })
-          .join("")}</div>`;
+      function risk(worker) {
+        let score = 0;
+        if (worker.temperature >= TEMP_LIMIT) score += 36 + (worker.temperature - TEMP_LIMIT) * 12;
+        if (worker.dust >= DUST_LIMIT) score += 28 + (worker.dust - DUST_LIMIT) * 0.7;
+        if (worker.fallen) score += 80;
+        if (worker.fallen) return { level: "danger", label: "摔倒警告", score };
+        if (worker.temperature >= TEMP_LIMIT || worker.dust >= DUST_LIMIT) return { level: "danger", label: "危险", score };
+        if (worker.temperature >= 37.1 || worker.dust >= 100) return { level: "warning", label: "关注", score: score + 12 };
+        return { level: "normal", label: "正常", score };
       }
+
+      function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+      function random(min, max) { return min + Math.random() * (max - min); }
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
+      }
+
+      update();
+      setInterval(update, 2800);
     </script>
   </body>
 </html>
