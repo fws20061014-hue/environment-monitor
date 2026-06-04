@@ -48,16 +48,35 @@
           </article>
         </section>
 
-        <section class="priority-panel">
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">Priority Workers</p>
-              <h2>状况较差工人监测窗口</h2>
+        <div class="dashboard-main">
+          <section class="priority-panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Priority Workers</p>
+                <h2>状况较差工人监测窗口</h2>
+              </div>
+              <span id="priorityCount">0 人异常</span>
             </div>
-            <span id="priorityCount">0 人异常</span>
-          </div>
-          <div id="priorityWorkerGrid" class="worker-grid priority-grid" aria-label="状况较差工人"></div>
-        </section>
+            <div id="priorityWorkerGrid" class="worker-grid priority-grid" aria-label="状况较差工人"></div>
+          </section>
+
+          <aside class="safety-aside" aria-label="工地安全情况">
+            <div>
+              <p class="eyebrow">Site Safety</p>
+              <h2>工地安全情况</h2>
+            </div>
+            <div class="safety-state" id="siteSafetyState">安全状态评估中</div>
+            <div class="safety-stats">
+              <article><span>今日在岗</span><strong id="onDutyCount">--</strong></article>
+              <article><span>异常工人</span><strong id="asideAbnormalCount">--</strong></article>
+              <article><span>低电量头盔</span><strong id="lowBatteryCount">--</strong></article>
+              <article><span>最近提醒</span><strong id="lastRemoteAction">暂无</strong></article>
+            </div>
+            <ul class="safety-list" id="safetyList">
+              <li>等待头盔数据同步。</li>
+            </ul>
+          </aside>
+        </div>
 
         <section class="site-board" aria-label="工地环境数据">
           <article>

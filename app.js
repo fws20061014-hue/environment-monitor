@@ -10,8 +10,10 @@ const workers = Array.from({ length: WORKER_COUNT }, (_, index) => ({
   temperature: 36.2 + Math.random() * 1.2,
   dust: 45 + Math.random() * 78,
   fallen: false,
+  onDuty: index % 9 !== 0,
   heartRate: 74 + Math.round(Math.random() * 18),
   battery: 72 + Math.round(Math.random() * 26),
+  batteryTrend: "stable",
   lastUpdate: new Date(),
 }));
 
@@ -41,9 +43,16 @@ const siteEls = {
   fallSummary: document.querySelector("#fallSummary"),
   priorityCount: document.querySelector("#priorityCount"),
   workerPageTime: document.querySelector("#workerPageTime"),
+  safetyState: document.querySelector("#siteSafetyState"),
+  onDutyCount: document.querySelector("#onDutyCount"),
+  asideAbnormalCount: document.querySelector("#asideAbnormalCount"),
+  lowBatteryCount: document.querySelector("#lowBatteryCount"),
+  lastRemoteAction: document.querySelector("#lastRemoteAction"),
+  safetyList: document.querySelector("#safetyList"),
 };
 
 let tick = 0;
+let lastRemoteAction = "暂无";
 
 toWorkersPage.addEventListener("click", () => {
   dashboardPage.classList.add("is-hidden");
@@ -69,13 +78,16 @@ function updateSimulation() {
   workers.forEach((worker, index) => {
     const wave = Math.sin((tick + index * 1.7) / 5);
     const dustWave = Math.cos((tick + index * 1.2) / 4);
+    const previousBattery = worker.battery;
     worker.temperature = clamp(worker.temperature + wave * 0.08 + randomBetween(-0.12, 0.14), 35.6, 39.4);
     worker.dust = clamp(worker.dust + dustWave * 3.2 + randomBetween(-7, 9), 24, 185);
     worker.heartRate = Math.round(clamp(worker.heartRate + randomBetween(-2.8, 3.2), 58, 128));
-    worker.battery = Math.round(clamp(worker.battery - Math.random() * 0.18, 18, 100));
+    worker.battery = Math.round(clamp(worker.battery - Math.random() * 0.18 + (worker.onDuty ? 0 : 0.04), 18, 100));
+    worker.batteryTrend = worker.battery < previousBattery ? "down" : worker.battery > previousBattery ? "up" : "stable";
 
     if (tick % 9 === 0 && Math.random() < 0.18) worker.fallen = !worker.fallen;
     if (worker.fallen && Math.random() < 0.08) worker.fallen = false;
+    if (tick % 16 === 0 && Math.random() < 0.12) worker.onDuty = !worker.onDuty;
     if (index === 2 && tick < 8) worker.fallen = true;
     if (index === 6 && tick % 12 < 6) worker.dust = Math.max(worker.dust, 132);
     if (index === 10 && tick % 14 < 5) worker.temperature = Math.max(worker.temperature, 37.8);
@@ -99,6 +111,7 @@ function render() {
 
   renderWeather(now);
   renderSiteEnvironment();
+  renderSafetyAside(abnormalCount, fallenCount);
   renderWorkerGrid(priorityWorkerGrid, priorityWorkers, true);
   renderWorkerGrid(allWorkerGrid, ranked, false);
 }
@@ -128,6 +141,29 @@ function renderSiteEnvironment() {
   siteEls.dustState.style.color = avgDust >= DUST_LIMIT ? "var(--red)" : "var(--muted)";
 }
 
+function renderSafetyAside(abnormalCount, fallenCount) {
+  const onDutyCount = workers.filter((worker) => worker.onDuty).length;
+  const lowBatteryCount = workers.filter((worker) => worker.battery <= 25).length;
+  const highDustCount = workers.filter((worker) => worker.dust >= DUST_LIMIT).length;
+  const highTempCount = workers.filter((worker) => worker.temperature >= TEMP_LIMIT).length;
+  const safetyLevel = fallenCount > 0 || highTempCount > 2 || highDustCount > 2 ? "危险" : abnormalCount > 0 ? "需关注" : "平稳";
+
+  siteEls.safetyState.textContent = safetyLevel === "危险" ? "当前存在高优先级安全风险" : safetyLevel === "需关注" ? "现场需要持续关注" : "现场安全情况平稳";
+  siteEls.safetyState.className = `safety-state state-${safetyLevel === "危险" ? "danger" : safetyLevel === "需关注" ? "warning" : "normal"}`;
+  siteEls.onDutyCount.textContent = `${onDutyCount}/${WORKER_COUNT}`;
+  siteEls.asideAbnormalCount.textContent = abnormalCount;
+  siteEls.lowBatteryCount.textContent = lowBatteryCount;
+  siteEls.lastRemoteAction.textContent = lastRemoteAction;
+
+  const tips = [];
+  if (fallenCount) tips.push(`${fallenCount} 名工人触发摔倒警告，建议立即联系现场负责人。`);
+  if (highTempCount) tips.push(`${highTempCount} 名工人体温偏高，建议安排休息和复测。`);
+  if (highDustCount) tips.push(`${highDustCount} 个头盔检测到高粉尘，建议检查降尘措施。`);
+  if (lowBatteryCount) tips.push(`${lowBatteryCount} 个头盔电量偏低，建议及时充电或更换。`);
+  if (!tips.length) tips.push("暂无高风险事件，保持常规巡检。");
+  siteEls.safetyList.innerHTML = tips.map((tip) => `<li>${escapeHtml(tip)}</li>`).join("");
+}
+
 function renderWorkerGrid(container, list, compact) {
   container.innerHTML = list.map((worker) => renderWorkerCard(worker, compact)).join("");
   container.querySelectorAll(".worker-name-input").forEach((input) => {
@@ -140,35 +176,61 @@ function renderWorkerGrid(container, list, compact) {
   });
   container.querySelectorAll(".worker-card").forEach((card) => {
     card.addEventListener("click", (event) => {
-      if (event.target.matches("input")) return;
+      if (event.target.matches("input, button")) return;
       showWorkerDetail(Number(card.dataset.id));
+    });
+  });
+  container.querySelectorAll(".remote-action").forEach((button) => {
+    button.addEventListener("click", () => {
+      const worker = workers.find((item) => item.id === Number(button.dataset.id));
+      const actionText = button.dataset.action === "talk" ? "已请求对话" : "已发送提醒";
+      lastRemoteAction = `${worker.name} ${actionText}`;
+      button.textContent = actionText;
+      renderSafetyAside(workers.filter((item) => getWorkerRisk(item).level !== "normal").length, workers.filter((item) => item.fallen).length);
+      window.setTimeout(render, 900);
     });
   });
 }
 
 function renderWorkerCard(worker, compact) {
   const risk = getWorkerRisk(worker);
+  const tempLight = getMetricLight("temperature", worker);
+  const dustLight = getMetricLight("dust", worker);
   const tempAlert = worker.temperature >= TEMP_LIMIT ? `<span class="metric-alert">!</span>` : "";
   const dustAlert = worker.dust >= DUST_LIMIT ? `<span class="metric-alert">!</span>` : "";
   const fallText = worker.fallen ? "摔倒警告" : "姿态正常";
   const fallIcon = worker.fallen ? `<span class="triangle-alert" aria-label="摔倒警告"></span>` : "";
+  const battery = getBatteryState(worker);
+  const dutyClass = worker.onDuty ? "on-duty" : "off-duty";
 
-  return `<article class="worker-card detail-open ${risk.level}${worker.fallen ? " fallen" : ""}" data-id="${worker.id}">
+  return `<article class="worker-card detail-open ${risk.level}${worker.fallen ? " fallen" : ""} ${dutyClass}" data-id="${worker.id}">
     <div class="worker-head">
       <div class="name-field">
         <label for="worker-${worker.id}-${compact ? "p" : "a"}">工人姓名</label>
         <input id="worker-${worker.id}-${compact ? "p" : "a"}" class="worker-name-input" data-id="${worker.id}" value="${escapeHtml(worker.name)}" />
       </div>
-      <span class="risk-badge">${risk.label}</span>
+      <div class="status-stack">
+        <span class="duty-badge">${worker.onDuty ? "在岗" : "离岗"}</span>
+        <span class="risk-badge">${risk.label}</span>
+      </div>
     </div>
     <div class="worker-body">
       <div class="worker-icon"><span class="vest"></span></div>
       <div class="worker-metrics">
-        <div class="worker-metric"><span>体温</span><strong>${worker.temperature.toFixed(1)} °C${tempAlert}</strong></div>
-        <div class="worker-metric"><span>附近粉尘</span><strong>${worker.dust.toFixed(0)} µg/m³${dustAlert}</strong></div>
+        <div class="worker-metric"><span><i class="signal-light ${tempLight.className}" title="${tempLight.label}"></i>体温</span><strong>${worker.temperature.toFixed(1)} °C${tempAlert}</strong></div>
+        <div class="worker-metric"><span><i class="signal-light ${dustLight.className}" title="${dustLight.label}"></i>附近粉尘</span><strong>${worker.dust.toFixed(0)} µg/m³${dustAlert}</strong></div>
       </div>
     </div>
+    <div class="battery-line">
+      <span class="battery-icon ${battery.className}"><i style="width: ${worker.battery}%"></i></span>
+      <strong>${worker.battery}%</strong>
+      <em>${battery.label}</em>
+    </div>
     <div class="fall-line ${worker.fallen ? "is-fallen" : ""}">${fallIcon}<span>${fallText}</span></div>
+    <div class="worker-actions">
+      <button class="remote-action" data-action="alert" data-id="${worker.id}" type="button">远程提醒</button>
+      <button class="remote-action talk" data-action="talk" data-id="${worker.id}" type="button">对话</button>
+    </div>
   </article>`;
 }
 
@@ -183,6 +245,7 @@ function showWorkerDetail(workerId) {
       <div class="detail-row"><span>体温</span><strong>${worker.temperature.toFixed(1)} °C</strong></div>
       <div class="detail-row"><span>附近粉尘浓度</span><strong>${worker.dust.toFixed(0)} µg/m³</strong></div>
       <div class="detail-row"><span>是否摔倒</span><strong>${worker.fallen ? "是" : "否"}</strong></div>
+      <div class="detail-row"><span>是否在岗</span><strong>${worker.onDuty ? "在岗" : "离岗"}</strong></div>
       <div class="detail-row"><span>心率</span><strong>${worker.heartRate} bpm</strong></div>
       <div class="detail-row"><span>安全帽电量</span><strong>${worker.battery}%</strong></div>
     </div>
@@ -205,6 +268,24 @@ function getWorkerRisk(worker) {
   if (worker.temperature >= TEMP_LIMIT || worker.dust >= DUST_LIMIT) return { level: "danger", label: "危险" , score };
   if (worker.temperature >= 37.1 || worker.dust >= 100) return { level: "warning", label: "关注", score: score + 12 };
   return { level: "normal", label: "正常", score };
+}
+
+function getMetricLight(type, worker) {
+  if (!worker.onDuty) return { className: "light-empty", label: "白灯：离岗或暂无有效数据" };
+  if (type === "temperature") {
+    if (worker.temperature >= TEMP_LIMIT) return { className: "light-red", label: "红灯：体温过高" };
+    if (worker.temperature >= 37.1) return { className: "light-orange", label: "橙灯：体温需关注" };
+    return { className: "light-green", label: "绿灯：体温正常" };
+  }
+  if (worker.dust >= DUST_LIMIT) return { className: "light-red", label: "红灯：粉尘过高" };
+  if (worker.dust >= 100) return { className: "light-orange", label: "橙灯：粉尘需关注" };
+  return { className: "light-green", label: "绿灯：粉尘正常" };
+}
+
+function getBatteryState(worker) {
+  if (worker.battery <= 25) return { className: "battery-low", label: "电量低" };
+  if (worker.battery <= 55) return { className: "battery-mid", label: worker.batteryTrend === "down" ? "电量下降" : "电量中等" };
+  return { className: "battery-good", label: worker.batteryTrend === "down" ? "电量稳定下降" : "电量充足" };
 }
 
 function average(values) {
