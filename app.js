@@ -13,6 +13,8 @@ const workers = Array.from({ length: WORKER_COUNT }, (_, index) => ({
   demoFallen: index === 2,
   helmetAlarm: false,
   alarmTime: null,
+  alarmSource: "",
+  fallAlarmAcknowledged: false,
   onDuty: index % 9 !== 0,
   heartRate: 74 + Math.round(Math.random() * 18),
   battery: 72 + Math.round(Math.random() * 26),
@@ -159,6 +161,11 @@ function updateSimulation() {
     if (worker.demoFallen) worker.fallen = true;
     if (index === 6 && tick % 12 < 6) worker.dust = Math.max(worker.dust, 132);
     if (index === 10 && tick % 14 < 5) worker.temperature = Math.max(worker.temperature, 37.8);
+    if (!worker.fallen) worker.fallAlarmAcknowledged = false;
+    if (worker.fallen && !worker.fallAlarmAcknowledged) {
+      activateHelmetAlarm(worker, "fall");
+      worker.fallAlarmAcknowledged = true;
+    }
 
     worker.lastUpdate = now;
   });
@@ -445,12 +452,35 @@ function renderWorkerGrid(container, list, compact) {
 }
 
 function handleHelmetAlarm(worker) {
-  worker.helmetAlarm = !worker.helmetAlarm;
-  worker.alarmTime = worker.helmetAlarm ? new Date() : null;
-  worker.onDuty = true;
-  lastRemoteAction = worker.helmetAlarm ? `${worker.name} 触发头盔报警` : `${worker.name} 解除头盔报警`;
+  if (worker.helmetAlarm) {
+    worker.helmetAlarm = false;
+    worker.alarmTime = null;
+    worker.alarmSource = "";
+    if (worker.fallen) worker.fallAlarmAcknowledged = true;
+    lastRemoteAction = `${worker.name} 解除头盔报警`;
+  } else {
+    activateHelmetAlarm(worker, "button");
+    lastRemoteAction = `${worker.name} 触发头盔按钮报警`;
+  }
   hideWorkerFocus();
   render();
+}
+
+function activateHelmetAlarm(worker, source) {
+  if (worker.helmetAlarm) {
+    if (source === "fall" && worker.alarmSource !== "fall") {
+      worker.alarmSource = "fall";
+      lastRemoteAction = `${worker.name} 摔倒检测自动报警`;
+      return true;
+    }
+    return false;
+  }
+  worker.helmetAlarm = true;
+  worker.alarmTime = new Date();
+  worker.alarmSource = source;
+  worker.onDuty = true;
+  lastRemoteAction = source === "fall" ? `${worker.name} 摔倒检测自动报警` : `${worker.name} 触发头盔按钮报警`;
+  return true;
 }
 
 function renderWorkerCard(worker, compact) {
@@ -461,7 +491,7 @@ function renderWorkerCard(worker, compact) {
   const dustAlert = worker.dust >= DUST_LIMIT ? `<span class="metric-alert">!</span>` : "";
   const fallText = worker.fallen ? "摔倒警告" : "姿态正常";
   const fallIcon = worker.fallen ? `<span class="triangle-alert" aria-label="摔倒警告"></span>` : "";
-  const helmetAlarmText = worker.helmetAlarm ? "头盔主动报警" : "头盔报警未触发";
+  const helmetAlarmText = getHelmetAlarmText(worker);
   const helmetAlarmIcon = `<span class="helmet-alarm-dot ${worker.helmetAlarm ? "is-active" : "is-idle"}" aria-label="${worker.helmetAlarm ? "头盔主动报警" : "头盔未报警"}">${worker.helmetAlarm ? "!" : "OK"}</span>`;
   const battery = getBatteryState(worker);
   const dutyClass = worker.onDuty ? "on-duty" : "off-duty";
@@ -559,7 +589,7 @@ function showWorkerFocus(workerId, anchorCard = null) {
       <article>
         <span>头盔报警</span>
         <strong>${worker.helmetAlarm ? "主动报警" : "未触发"}</strong>
-        <small>${worker.helmetAlarm ? "深红紧急，优先定位处理" : "头盔后部按钮未触发"}</small>
+        <small>${worker.helmetAlarm ? getHelmetAlarmDetail(worker) : "头盔后部按钮未触发"}</small>
       </article>
       <article>
         <span>电量</span>
@@ -652,7 +682,7 @@ function showWorkerDetail(workerId) {
       <div class="detail-row"><span>体温</span><strong>${worker.temperature.toFixed(1)} °C</strong></div>
       <div class="detail-row"><span>附近粉尘浓度</span><strong>${worker.dust.toFixed(0)} µg/m³</strong></div>
       <div class="detail-row"><span>姿态状态</span><strong>${worker.fallen ? "摔倒警告" : "正常"}</strong></div>
-      <div class="detail-row"><span>头盔报警</span><strong>${worker.helmetAlarm ? "已主动报警" : "未触发"}</strong></div>
+      <div class="detail-row"><span>头盔报警</span><strong>${worker.helmetAlarm ? getHelmetAlarmText(worker) : "未触发"}</strong></div>
       <div class="detail-row"><span>是否在岗</span><strong>${worker.onDuty ? "在岗" : "离岗"}</strong></div>
       <div class="detail-row"><span>心率</span><strong>${worker.heartRate} bpm</strong></div>
       <div class="detail-row"><span>安全帽电量</span><strong>${worker.battery}%</strong></div>
@@ -660,6 +690,15 @@ function showWorkerDetail(workerId) {
     <p class="detail-note">异常规则：按下头盔后部报警按钮会被置为最紧急；其次是摔倒、体温异常、粉尘异常。</p>
   </section>`;
   workerDialog.showModal();
+}
+
+function getHelmetAlarmText(worker) {
+  if (!worker.helmetAlarm) return "头盔报警未触发";
+  return worker.alarmSource === "fall" ? "摔倒自动报警" : "头盔主动报警";
+}
+
+function getHelmetAlarmDetail(worker) {
+  return worker.alarmSource === "fall" ? "检测到摔倒，已自动触发深红紧急报警" : "头盔后部按钮触发，优先定位处理";
 }
 
 function getRankedWorkers() {
