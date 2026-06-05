@@ -26,6 +26,8 @@ const allWorkerGrid = document.querySelector("#allWorkerGrid");
 const workerDialog = document.querySelector("#workerDialog");
 const workerDetail = document.querySelector("#workerDetail");
 const broadcastButtons = document.querySelectorAll(".broadcast-action");
+const workerFocusLayer = document.querySelector("#workerFocusLayer");
+const workerFocusContent = document.querySelector("#workerFocusContent");
 
 const weatherEls = {
   board: document.querySelector("#weatherBoard"),
@@ -70,6 +72,7 @@ const siteEls = {
 
 let tick = 0;
 let lastRemoteAction = "暂无";
+let focusedWorkerId = null;
 
 toWorkersPage.addEventListener("click", () => {
   dashboardPage.classList.add("is-hidden");
@@ -166,6 +169,7 @@ function render() {
   renderSafetyAside(abnormalCount, fallenCount);
   renderWorkerGrid(priorityWorkerGrid, priorityWorkers, true);
   renderWorkerGrid(allWorkerGrid, ranked, false);
+  if (focusedWorkerId) showWorkerFocus(focusedWorkerId);
 }
 
 function renderWeather(now) {
@@ -401,6 +405,8 @@ function renderWorkerGrid(container, list, compact) {
     });
   });
   container.querySelectorAll(".worker-card").forEach((card) => {
+    card.addEventListener("mouseenter", () => showWorkerFocus(Number(card.dataset.id)));
+    card.addEventListener("mouseleave", hideWorkerFocus);
     card.addEventListener("click", (event) => {
       if (event.target.matches("input, button")) return;
       showWorkerDetail(Number(card.dataset.id));
@@ -460,7 +466,78 @@ function renderWorkerCard(worker, compact) {
   </article>`;
 }
 
+function showWorkerFocus(workerId) {
+  const worker = workers.find((item) => item.id === workerId);
+  if (!worker || !workerFocusLayer || !workerFocusContent) return;
+
+  focusedWorkerId = workerId;
+  const risk = getWorkerRisk(worker);
+  const tempLight = getMetricLight("temperature", worker);
+  const dustLight = getMetricLight("dust", worker);
+  const battery = getBatteryState(worker);
+  const layerClass = `worker-focus-layer is-visible focus-${risk.level}${worker.fallen ? " focus-fallen" : ""}`;
+
+  workerFocusLayer.className = layerClass;
+  workerFocusLayer.setAttribute("aria-hidden", "false");
+  workerFocusLayer.style.setProperty("opacity", "1", "important");
+  workerFocusContent.innerHTML = `<section class="focus-worker-card">
+    <p class="eyebrow">Worker Focus</p>
+    <div class="focus-worker-main">
+      <div class="worker-icon focus-avatar"><span class="vest"></span></div>
+      <div>
+        <span class="focus-kicker">当前工人</span>
+        <strong>${escapeHtml(worker.name)}</strong>
+        <small>${worker.onDuty ? "在岗" : "离岗"} · ${risk.label}</small>
+      </div>
+    </div>
+    <div class="focus-mini-grid">
+      <span>心率 <strong>${worker.heartRate} bpm</strong></span>
+      <span>头盔电量 <strong>${worker.battery}%</strong></span>
+    </div>
+  </section>
+  <div class="focus-connector" aria-hidden="true">
+    <span></span>
+    <i></i>
+    <span></span>
+  </div>
+  <section class="focus-info-card">
+    <p class="eyebrow">Live Status</p>
+    <h3>状态信息名片</h3>
+    <div class="focus-metric-list">
+      <article>
+        <span><i class="signal-light ${tempLight.className}"></i>体温</span>
+        <strong>${worker.temperature.toFixed(1)} °C</strong>
+        <small>${worker.temperature >= TEMP_LIMIT ? "体温异常优先处理" : worker.temperature >= 37.1 ? "体温需要关注" : "体温正常"}</small>
+      </article>
+      <article>
+        <span><i class="signal-light ${dustLight.className}"></i>粉尘浓度</span>
+        <strong>${worker.dust.toFixed(0)} µg/m³</strong>
+        <small>${worker.dust >= DUST_LIMIT ? "粉尘异常" : worker.dust >= 100 ? "粉尘需要关注" : "粉尘正常"}</small>
+      </article>
+      <article>
+        <span>姿态</span>
+        <strong>${worker.fallen ? "摔倒警告" : "姿态正常"}</strong>
+        <small>${worker.fallen ? "最高优先级" : "未触发摔倒"}</small>
+      </article>
+      <article>
+        <span>电量</span>
+        <strong>${worker.battery}%</strong>
+        <small>${battery.label}</small>
+      </article>
+    </div>
+  </section>`;
+}
+
+function hideWorkerFocus() {
+  focusedWorkerId = null;
+  if (!workerFocusLayer) return;
+  workerFocusLayer.classList.remove("is-visible");
+  workerFocusLayer.setAttribute("aria-hidden", "true");
+  workerFocusLayer.style.removeProperty("opacity");
+}
+
 function showWorkerDetail(workerId) {
+  hideWorkerFocus();
   const worker = workers.find((item) => item.id === workerId);
   const risk = getWorkerRisk(worker);
   workerDetail.innerHTML = `<section class="detail-card">

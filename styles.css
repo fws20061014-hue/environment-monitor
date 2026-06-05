@@ -1909,6 +1909,267 @@ h2 {
   cursor: pointer;
 }
 
+.worker-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(23, 43, 53, 0.1);
+}
+
+.worker-card:hover::before,
+.worker-card:hover .worker-body::before,
+.worker-card:hover .worker-body::after,
+.worker-card:hover .worker-metric::before,
+.worker-card:hover .battery-line::before,
+.worker-card:hover .fall-line::before {
+  opacity: 0;
+}
+
+.worker-card:hover .worker-body::before,
+.worker-card:hover .worker-body::after,
+.worker-card:hover .worker-metric::before {
+  transform: scaleX(0);
+}
+
+.worker-card:hover .battery-line::before,
+.worker-card:hover .fall-line::before {
+  transform: scaleY(0);
+}
+
+.worker-card:hover .fall-line {
+  background: transparent;
+}
+
+.worker-focus-layer {
+  --focus-bg: rgba(255, 255, 255, 0.48);
+  --focus-panel: rgba(255, 255, 255, 0.9);
+  --focus-line: rgba(40, 120, 199, 0.55);
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  pointer-events: none;
+  opacity: 0;
+  background: rgba(244, 247, 248, 0.44);
+  -webkit-backdrop-filter: blur(10px) saturate(1.04);
+  backdrop-filter: blur(10px) saturate(1.04);
+  transition: opacity 0.18s ease;
+}
+
+.worker-focus-layer.is-visible {
+  opacity: 1;
+}
+
+#workerFocusLayer.is-visible {
+  opacity: 1 !important;
+}
+
+.worker-focus-layer.focus-warning {
+  --focus-bg: rgba(242, 180, 63, 0.16);
+  --focus-panel: rgba(255, 250, 238, 0.94);
+  --focus-line: rgba(242, 180, 63, 0.72);
+  background: rgba(255, 246, 226, 0.45);
+}
+
+.worker-focus-layer.focus-danger,
+.worker-focus-layer.focus-fallen {
+  --focus-bg: rgba(223, 75, 66, 0.2);
+  --focus-panel: rgba(255, 245, 244, 0.95);
+  --focus-line: rgba(223, 75, 66, 0.78);
+  background: rgba(255, 239, 238, 0.52);
+}
+
+.worker-focus-content {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) 96px minmax(320px, 430px);
+  align-items: center;
+  width: min(900px, calc(100vw - 56px));
+  transform: translateY(8px) scale(0.96);
+  transition: transform 0.18s ease;
+}
+
+.worker-focus-layer.is-visible .worker-focus-content {
+  transform: translateY(0) scale(1);
+}
+
+.focus-worker-card,
+.focus-info-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--focus-line);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, var(--focus-panel), rgba(255, 255, 255, 0.72)),
+    radial-gradient(circle at 18% 22%, var(--focus-bg), transparent 48%);
+  box-shadow: 0 28px 70px rgba(23, 43, 53, 0.2);
+}
+
+.focus-worker-card {
+  min-height: 260px;
+  padding: 20px;
+}
+
+.focus-worker-main {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.focus-avatar {
+  width: 90px;
+  height: 112px;
+  background: rgba(238, 246, 248, 0.86);
+  box-shadow: inset 0 0 0 1px var(--focus-line);
+}
+
+.focus-avatar::before {
+  left: 22px;
+  top: 40px;
+  width: 46px;
+  height: 46px;
+}
+
+.focus-avatar::after {
+  left: 14px;
+  top: 24px;
+  width: 62px;
+  height: 26px;
+}
+
+.focus-avatar .vest {
+  left: 16px;
+  width: 58px;
+  height: 34px;
+}
+
+.focus-kicker,
+.focus-mini-grid span,
+.focus-metric-list span,
+.focus-metric-list small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.focus-worker-main strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 1.85rem;
+  line-height: 1.1;
+}
+
+.focus-worker-main small {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.focus-mini-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.focus-mini-grid span {
+  border: 1px solid rgba(23, 43, 53, 0.08);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.focus-mini-grid strong,
+.focus-metric-list strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--ink);
+}
+
+.focus-connector {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 200px;
+}
+
+.focus-connector::before,
+.focus-connector span {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--focus-line), transparent);
+  box-shadow: 0 0 12px var(--focus-line);
+}
+
+.focus-connector::before {
+  top: 56px;
+}
+
+.focus-connector span:first-child {
+  top: 100px;
+}
+
+.focus-connector span:last-child {
+  bottom: 56px;
+}
+
+.focus-connector i {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--focus-line);
+  box-shadow:
+    0 -44px 0 -3px var(--focus-line),
+    0 44px 0 -3px var(--focus-line),
+    0 0 0 8px rgba(255, 255, 255, 0.42);
+}
+
+.focus-info-card {
+  padding: 20px;
+}
+
+.focus-info-card h3 {
+  margin-top: 4px;
+  font-size: 1.55rem;
+}
+
+.focus-metric-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.focus-metric-list article {
+  min-height: 104px;
+  border: 1px solid rgba(23, 43, 53, 0.08);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.focus-metric-list span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.focus-metric-list strong {
+  font-size: 1.35rem;
+}
+
+.focus-metric-list small {
+  display: block;
+  margin-top: 6px;
+  line-height: 1.45;
+}
+
 .worker-dialog {
   width: min(720px, calc(100% - 28px));
   border: 1px solid var(--line);
@@ -2293,6 +2554,46 @@ h2 {
     .site-board,
     .safety-stats,
     .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .worker-focus-layer {
+    padding: 16px;
+  }
+
+  .worker-focus-content {
+    grid-template-columns: 1fr;
+    width: min(420px, calc(100vw - 32px));
+  }
+
+  .focus-connector {
+    min-height: 44px;
+  }
+
+  .focus-connector::before,
+  .focus-connector span {
+    left: 50%;
+    right: auto;
+    width: 2px;
+    height: 30px;
+    background: linear-gradient(180deg, transparent, var(--focus-line), transparent);
+  }
+
+  .focus-connector::before {
+    top: 6px;
+  }
+
+  .focus-connector span:first-child {
+    top: 12px;
+    transform: translateX(-12px);
+  }
+
+  .focus-connector span:last-child {
+    bottom: 6px;
+    transform: translateX(12px);
+  }
+
+  .focus-metric-list {
     grid-template-columns: 1fr;
   }
 }
