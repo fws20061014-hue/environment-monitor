@@ -19,6 +19,8 @@ const workers = Array.from({ length: WORKER_COUNT }, (_, index) => ({
 
 const dashboardPage = document.querySelector("#dashboardPage");
 const workersPage = document.querySelector("#workersPage");
+const introScreen = document.querySelector("#introScreen");
+const enterConsole = document.querySelector("#enterConsole");
 const toWorkersPage = document.querySelector("#toWorkersPage");
 const backDashboard = document.querySelector("#backDashboard");
 const priorityWorkerGrid = document.querySelector("#priorityWorkerGrid");
@@ -73,6 +75,10 @@ const siteEls = {
 let tick = 0;
 let lastRemoteAction = "暂无";
 let focusedWorkerId = null;
+
+enterConsole?.addEventListener("click", () => {
+  introScreen?.classList.add("is-hidden");
+});
 
 toWorkersPage.addEventListener("click", () => {
   dashboardPage.classList.add("is-hidden");
