@@ -129,20 +129,55 @@
         </div>
 
         <section class="site-board" aria-label="工地环境数据">
-          <article>
-            <span>工地气温</span>
-            <strong id="siteTemp">-- °C</strong>
-            <small id="siteTempState">正常</small>
+          <article id="siteTempCard" class="site-data-card site-temp-card">
+            <div class="site-effect site-temp-effect" aria-hidden="true">
+              <span class="site-sun"></span>
+              <span class="site-ray site-ray-one"></span>
+              <span class="site-ray site-ray-two"></span>
+              <span class="site-breeze breeze-one"></span>
+              <span class="site-breeze breeze-two"></span>
+              <span class="site-breeze breeze-three"></span>
+              <span class="site-snow snow-site-one"></span>
+              <span class="site-snow snow-site-two"></span>
+              <span class="site-snow snow-site-three"></span>
+            </div>
+            <div>
+              <span>工地气温</span>
+              <strong id="siteTemp">-- °C</strong>
+              <small id="siteTempState">正常</small>
+            </div>
           </article>
-          <article>
-            <span>工地粉尘浓度</span>
-            <strong id="siteDust">-- µg/m³</strong>
-            <small id="siteDustState">正常</small>
+          <article id="siteDustCard" class="site-data-card site-dust-card">
+            <div class="site-effect site-dust-effect" aria-hidden="true">
+              <span class="site-dust-grain grain-one"></span>
+              <span class="site-dust-grain grain-two"></span>
+              <span class="site-dust-grain grain-three"></span>
+              <span class="site-dust-grain grain-four"></span>
+              <span class="site-dust-grain grain-five"></span>
+              <span class="site-dust-grain grain-six"></span>
+              <span class="site-dust-grain grain-seven"></span>
+              <span class="site-dust-grain grain-eight"></span>
+              <span class="site-dust-grain grain-nine"></span>
+              <span class="site-dust-grain grain-ten"></span>
+              <span class="site-dust-grain grain-eleven"></span>
+              <span class="site-dust-grain grain-twelve"></span>
+            </div>
+            <div>
+              <span>工地粉尘浓度</span>
+              <strong id="siteDust">-- µg/m³</strong>
+              <small id="siteDustState">正常</small>
+            </div>
           </article>
-          <article>
-            <span>摔倒警告</span>
-            <strong id="fallSummary">0 起</strong>
-            <small>自动进入上方窗口</small>
+          <article id="siteAlertCard" class="site-data-card site-alert-card">
+            <div class="site-effect site-alert-effect" aria-hidden="true">
+              <span class="site-alert-ring"></span>
+              <span class="site-alert-symbol">!</span>
+            </div>
+            <div>
+              <span>警告次数</span>
+              <strong id="fallSummary">0 次</strong>
+              <small id="siteAlertState">绿色低频</small>
+            </div>
           </article>
         </section>
       </section>

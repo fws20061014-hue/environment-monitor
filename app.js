@@ -46,11 +46,15 @@ const weatherEls = {
 };
 
 const siteEls = {
+  tempCard: document.querySelector("#siteTempCard"),
   temp: document.querySelector("#siteTemp"),
   tempState: document.querySelector("#siteTempState"),
+  dustCard: document.querySelector("#siteDustCard"),
   dust: document.querySelector("#siteDust"),
   dustState: document.querySelector("#siteDustState"),
+  alertCard: document.querySelector("#siteAlertCard"),
   fallSummary: document.querySelector("#fallSummary"),
+  alertState: document.querySelector("#siteAlertState"),
   priorityCount: document.querySelector("#priorityCount"),
   workerPageTime: document.querySelector("#workerPageTime"),
   safetyState: document.querySelector("#siteSafetyState"),
@@ -116,11 +120,10 @@ function render() {
   const now = new Date();
 
   siteEls.priorityCount.textContent = `${abnormalCount} 人异常`;
-  siteEls.fallSummary.textContent = `${fallenCount} 起`;
   siteEls.workerPageTime.textContent = `更新时间：${now.toLocaleString("zh-CN")}`;
 
   renderWeather(now);
-  renderSiteEnvironment();
+  renderSiteEnvironment(abnormalCount, fallenCount);
   renderSafetyAside(abnormalCount, fallenCount);
   renderWorkerGrid(priorityWorkerGrid, priorityWorkers, true);
   renderWorkerGrid(allWorkerGrid, ranked, false);
@@ -234,15 +237,68 @@ function getTimePeriodLabel(date) {
   return "夜间时段";
 }
 
-function renderSiteEnvironment() {
+function renderSiteEnvironment(abnormalCount, fallenCount) {
   const avgTemp = average(workers.map((worker) => worker.temperature)) - 9.6;
   const avgDust = average(workers.map((worker) => worker.dust));
+  const dustIntensity = getSiteDustIntensity(avgDust);
   siteEls.temp.textContent = `${avgTemp.toFixed(1)} °C`;
   siteEls.dust.textContent = `${avgDust.toFixed(0)} µg/m³`;
-  siteEls.tempState.textContent = avgTemp >= 30 ? "偏高" : "正常";
-  siteEls.dustState.textContent = avgDust >= DUST_LIMIT ? "偏高" : "正常";
-  siteEls.tempState.style.color = avgTemp >= 30 ? "var(--red)" : "var(--muted)";
-  siteEls.dustState.style.color = avgDust >= DUST_LIMIT ? "var(--red)" : "var(--muted)";
+  siteEls.fallSummary.textContent = `${abnormalCount} 次`;
+  siteEls.tempState.textContent = getSiteTempState(avgTemp);
+  siteEls.dustState.textContent = getSiteDustState(avgDust);
+  siteEls.alertState.textContent = getSiteAlertState(abnormalCount, fallenCount);
+  siteEls.tempCard.className = `site-data-card site-temp-card ${getSiteTempClass(avgTemp)}`;
+  siteEls.dustCard.className = `site-data-card site-dust-card ${getSiteDustClass(avgDust)}`;
+  siteEls.dustCard.style.setProperty("--site-dust-opacity", dustIntensity.opacity.toFixed(2));
+  siteEls.dustCard.style.setProperty("--site-dust-speed", `${dustIntensity.speed}s`);
+  siteEls.alertCard.className = `site-data-card site-alert-card ${getSiteAlertClass(abnormalCount)}`;
+  siteEls.tempState.style.color = avgTemp >= 29 ? "var(--red)" : avgTemp <= 22 ? "var(--blue)" : "var(--muted)";
+  siteEls.dustState.style.color = avgDust >= DUST_LIMIT ? "var(--red)" : avgDust >= 95 ? "#8a5b08" : "var(--muted)";
+  siteEls.alertState.style.color = abnormalCount >= 9 ? "var(--red)" : abnormalCount >= 4 ? "#8a5b08" : "var(--green)";
+}
+
+function getSiteTempClass(temp) {
+  if (temp >= 29) return "site-temp-hot";
+  if (temp <= 22) return "site-temp-cold";
+  return "site-temp-mild";
+}
+
+function getSiteTempState(temp) {
+  if (temp >= 29) return "偏高，太阳直射";
+  if (temp <= 22) return "偏低，注意保暖";
+  return "适中，清风拂过";
+}
+
+function getSiteDustClass(dust) {
+  if (dust >= DUST_LIMIT) return "site-dust-severe";
+  if (dust >= 95) return "site-dust-high";
+  if (dust >= 65) return "site-dust-mid";
+  return "site-dust-low";
+}
+
+function getSiteDustState(dust) {
+  if (dust >= DUST_LIMIT) return "浓度偏高";
+  if (dust >= 95) return "浓度需关注";
+  if (dust >= 65) return "浓度中等";
+  return "浓度较低";
+}
+
+function getSiteDustIntensity(dust) {
+  const opacity = clamp((dust - 35) / 110, 0.28, 1);
+  const speed = Math.max(1.25, 3 - opacity * 1.25).toFixed(2);
+  return { opacity, speed };
+}
+
+function getSiteAlertClass(count) {
+  if (count >= 9) return "site-alert-high";
+  if (count >= 4) return "site-alert-mid";
+  return "site-alert-low";
+}
+
+function getSiteAlertState(count, fallenCount) {
+  if (count >= 9) return fallenCount ? `红色高频，${fallenCount} 起摔倒` : "红色高频";
+  if (count >= 4) return fallenCount ? `橙色关注，${fallenCount} 起摔倒` : "橙色关注";
+  return fallenCount ? `绿色低频，${fallenCount} 起摔倒` : "绿色低频";
 }
 
 function renderSafetyAside(abnormalCount, fallenCount) {
