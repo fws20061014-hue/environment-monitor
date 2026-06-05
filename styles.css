@@ -2281,14 +2281,9 @@ h2 {
   position: fixed;
   inset: 0;
   z-index: 80;
-  display: grid;
-  place-items: center;
-  padding: 28px;
   pointer-events: none;
   opacity: 0;
-  background: rgba(244, 247, 248, 0.44);
-  -webkit-backdrop-filter: blur(10px) saturate(1.04);
-  backdrop-filter: blur(10px) saturate(1.04);
+  background: transparent;
   transition: opacity 0.18s ease;
 }
 
@@ -2304,7 +2299,7 @@ h2 {
   --focus-bg: rgba(242, 180, 63, 0.16);
   --focus-panel: rgba(255, 250, 238, 0.94);
   --focus-line: rgba(242, 180, 63, 0.72);
-  background: rgba(255, 246, 226, 0.45);
+  background: transparent;
 }
 
 .worker-focus-layer.focus-danger,
@@ -2312,7 +2307,7 @@ h2 {
   --focus-bg: rgba(223, 75, 66, 0.2);
   --focus-panel: rgba(255, 245, 244, 0.95);
   --focus-line: rgba(223, 75, 66, 0.78);
-  background: rgba(255, 239, 238, 0.52);
+  background: transparent;
 }
 
 .worker-focus-layer.focus-critical,
@@ -2320,20 +2315,23 @@ h2 {
   --focus-bg: rgba(95, 16, 16, 0.24);
   --focus-panel: rgba(255, 237, 234, 0.96);
   --focus-line: rgba(95, 16, 16, 0.86);
-  background: rgba(255, 226, 222, 0.58);
+  background: transparent;
 }
 
 .worker-focus-content {
+  position: fixed;
+  left: var(--focus-left, 28px);
+  top: var(--focus-top, 28px);
   display: grid;
-  grid-template-columns: minmax(260px, 320px) 96px minmax(320px, 430px);
+  grid-template-columns: minmax(220px, 260px) 48px minmax(250px, 330px);
   align-items: center;
-  width: min(900px, calc(100vw - 56px));
-  transform: translateY(8px) scale(0.96);
+  width: min(650px, calc(100vw - 32px));
+  transform: translateY(6px);
   transition: transform 0.18s ease;
 }
 
 .worker-focus-layer.is-visible .worker-focus-content {
-  transform: translateY(0) scale(1);
+  transform: translateY(0);
 }
 
 .focus-worker-card,
@@ -2349,21 +2347,21 @@ h2 {
 }
 
 .focus-worker-card {
-  min-height: 260px;
-  padding: 20px;
+  min-height: 218px;
+  padding: 16px;
 }
 
 .focus-worker-main {
   display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
+  grid-template-columns: 76px minmax(0, 1fr);
   align-items: center;
-  gap: 16px;
-  margin-top: 18px;
+  gap: 12px;
+  margin-top: 14px;
 }
 
 .focus-avatar {
-  width: 90px;
-  height: 112px;
+  width: 76px;
+  height: 96px;
   background: rgba(238, 246, 248, 0.86);
   box-shadow: inset 0 0 0 1px var(--focus-line);
 }
@@ -2413,8 +2411,8 @@ h2 {
 .focus-mini-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 20px;
+  gap: 8px;
+  margin-top: 14px;
 }
 
 .focus-mini-grid span {
@@ -2435,7 +2433,7 @@ h2 {
   position: relative;
   display: grid;
   place-items: center;
-  min-height: 200px;
+  min-height: 160px;
 }
 
 .focus-connector::before,
@@ -2451,15 +2449,15 @@ h2 {
 }
 
 .focus-connector::before {
-  top: 56px;
+  top: 44px;
 }
 
 .focus-connector span:first-child {
-  top: 100px;
+  top: 80px;
 }
 
 .focus-connector span:last-child {
-  bottom: 56px;
+  bottom: 44px;
 }
 
 .focus-connector i {
@@ -2475,26 +2473,26 @@ h2 {
 }
 
 .focus-info-card {
-  padding: 20px;
+  padding: 16px;
 }
 
 .focus-info-card h3 {
   margin-top: 4px;
-  font-size: 1.55rem;
+  font-size: 1.3rem;
 }
 
 .focus-metric-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 16px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .focus-metric-list article {
-  min-height: 104px;
+  min-height: 90px;
   border: 1px solid rgba(23, 43, 53, 0.08);
   border-radius: 8px;
-  padding: 12px;
+  padding: 10px;
   background: rgba(255, 255, 255, 0.68);
 }
 
@@ -3248,12 +3246,14 @@ h2 {
   }
 
   .worker-focus-layer {
-    padding: 16px;
+    inset: 0;
   }
 
   .worker-focus-content {
     grid-template-columns: 1fr;
     width: min(420px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    overflow: auto;
   }
 
   .focus-connector {

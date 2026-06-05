@@ -78,6 +78,7 @@ const siteEls = {
 let tick = 0;
 let lastRemoteAction = "暂无";
 let focusedWorkerId = null;
+let focusedWorkerScope = "";
 
 enterConsole?.addEventListener("click", () => {
   introScreen?.classList.add("is-hidden");
@@ -420,7 +421,7 @@ function renderWorkerGrid(container, list, compact) {
     });
   });
   container.querySelectorAll(".worker-card").forEach((card) => {
-    card.addEventListener("mouseenter", () => showWorkerFocus(Number(card.dataset.id)));
+    card.addEventListener("mouseenter", () => showWorkerFocus(Number(card.dataset.id), card));
     card.addEventListener("mouseleave", hideWorkerFocus);
     card.addEventListener("click", (event) => {
       if (event.target.matches("input, button")) return;
@@ -498,11 +499,12 @@ function renderWorkerCard(worker, compact) {
   </article>`;
 }
 
-function showWorkerFocus(workerId) {
+function showWorkerFocus(workerId, anchorCard = null) {
   const worker = workers.find((item) => item.id === workerId);
   if (!worker || !workerFocusLayer || !workerFocusContent) return;
 
   focusedWorkerId = workerId;
+  if (anchorCard) focusedWorkerScope = anchorCard.closest("#priorityWorkerGrid") ? "#priorityWorkerGrid" : "#allWorkerGrid";
   const risk = getWorkerRisk(worker);
   const tempLight = getMetricLight("temperature", worker);
   const dustLight = getMetricLight("dust", worker);
@@ -566,14 +568,76 @@ function showWorkerFocus(workerId) {
       </article>
     </div>
   </section>`;
+  positionWorkerFocus(getWorkerFocusAnchor(workerId, anchorCard));
+}
+
+function getWorkerFocusAnchor(workerId, anchorCard = null) {
+  const scopedAnchor = focusedWorkerScope ? document.querySelector(`${focusedWorkerScope} .worker-card[data-id="${workerId}"]`) : null;
+  const candidates = [anchorCard, scopedAnchor, ...document.querySelectorAll(`.worker-card[data-id="${workerId}"]`)].filter(Boolean);
+  return candidates.find((card) => {
+    const rect = card.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0 && rect.right > 0 && rect.bottom > 0 && rect.left < window.innerWidth && rect.top < window.innerHeight;
+  }) || candidates[0];
+}
+
+function positionWorkerFocus(anchorCard) {
+  if (!anchorCard || !workerFocusContent) return;
+
+  window.requestAnimationFrame(() => {
+    const margin = 16;
+    const gap = 18;
+    const anchorRect = anchorCard.getBoundingClientRect();
+    const panelRect = workerFocusContent.getBoundingClientRect();
+    const panelWidth = panelRect.width || Math.min(680, window.innerWidth - margin * 2);
+    const panelHeight = panelRect.height || 360;
+    const centerTop = anchorRect.top + anchorRect.height / 2 - panelHeight / 2;
+    const centerLeft = anchorRect.left + anchorRect.width / 2 - panelWidth / 2;
+    const candidates = window.innerWidth <= 820
+      ? [
+          { left: centerLeft, top: anchorRect.bottom + gap },
+          { left: centerLeft, top: anchorRect.top - panelHeight - gap },
+        ]
+      : [
+          { left: anchorRect.right + gap, top: centerTop },
+          { left: anchorRect.left - panelWidth - gap, top: centerTop },
+          { left: centerLeft, top: anchorRect.bottom + gap },
+          { left: centerLeft, top: anchorRect.top - panelHeight - gap },
+        ];
+    const positioned = candidates.map((candidate) => ({
+      left: clampWithin(candidate.left, margin, window.innerWidth - panelWidth - margin),
+      top: clampWithin(candidate.top, margin, window.innerHeight - panelHeight - margin),
+    }));
+    const chosen = positioned.find((candidate) => !rectsOverlap(candidate, panelWidth, panelHeight, anchorRect)) || positioned[0];
+
+    workerFocusContent.style.setProperty("--focus-left", `${chosen.left}px`);
+    workerFocusContent.style.setProperty("--focus-top", `${chosen.top}px`);
+  });
+}
+
+function clampWithin(value, min, max) {
+  if (max < min) return min;
+  return clamp(value, min, max);
+}
+
+function rectsOverlap(candidate, width, height, targetRect) {
+  const candidateRect = {
+    left: candidate.left,
+    right: candidate.left + width,
+    top: candidate.top,
+    bottom: candidate.top + height,
+  };
+  return !(candidateRect.right <= targetRect.left || candidateRect.left >= targetRect.right || candidateRect.bottom <= targetRect.top || candidateRect.top >= targetRect.bottom);
 }
 
 function hideWorkerFocus() {
   focusedWorkerId = null;
+  focusedWorkerScope = "";
   if (!workerFocusLayer) return;
   workerFocusLayer.classList.remove("is-visible");
   workerFocusLayer.setAttribute("aria-hidden", "true");
   workerFocusLayer.style.removeProperty("opacity");
+  workerFocusContent?.style.removeProperty("--focus-left");
+  workerFocusContent?.style.removeProperty("--focus-top");
 }
 
 function showWorkerDetail(workerId) {
