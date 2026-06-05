@@ -1319,7 +1319,7 @@ h2 {
   position: relative;
   overflow: hidden;
   min-width: 0;
-  min-height: 282px;
+  min-height: 326px;
   padding: 14px;
   background: var(--panel);
   transform-origin: center;
@@ -1385,6 +1385,16 @@ h2 {
   --worker-focus-line: rgba(223, 75, 66, 0.68);
   border-color: rgba(223, 75, 66, 0.72);
   background: linear-gradient(180deg, #ffffff 0%, var(--red-soft) 100%);
+}
+
+.worker-card.critical,
+.worker-card.helmet-alarm {
+  --worker-focus-bg: rgba(95, 16, 16, 0.24);
+  --worker-focus-edge: rgba(95, 16, 16, 0.36);
+  --worker-focus-line: rgba(95, 16, 16, 0.84);
+  border-color: rgba(95, 16, 16, 0.9);
+  background: linear-gradient(180deg, #ffffff 0%, #ffe7e4 62%, #ffd1cc 100%);
+  box-shadow: 0 18px 38px rgba(95, 16, 16, 0.16);
 }
 
 .worker-head {
@@ -1455,6 +1465,13 @@ h2 {
 .fallen .risk-badge {
   color: #b83028;
   background: rgba(223, 75, 66, 0.15);
+}
+
+.critical .risk-badge,
+.helmet-alarm .risk-badge {
+  color: #ffffff;
+  background: #5f1010;
+  box-shadow: 0 0 0 4px rgba(95, 16, 16, 0.12);
 }
 
 .worker-body {
@@ -1713,7 +1730,8 @@ h2 {
   background: var(--red);
 }
 
-.fall-line {
+.fall-line,
+.helmet-alarm-line {
   position: relative;
   display: flex;
   align-items: center;
@@ -1730,13 +1748,36 @@ h2 {
   color: var(--red);
 }
 
+.helmet-alarm-line {
+  margin-top: 8px;
+}
+
+.helmet-alarm-line.is-active {
+  color: #5f1010;
+  background: rgba(95, 16, 16, 0.08);
+}
+
+.helmet-alarm-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 900;
+  background: #5f1010;
+  box-shadow: 0 0 0 5px rgba(95, 16, 16, 0.14);
+  animation: siteAlertBeat 1s ease-in-out infinite;
+}
+
 .worker-card:hover .fall-line {
   background: rgba(255, 255, 255, 0.46);
 }
 
 .worker-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-top: 10px;
 }
@@ -1751,6 +1792,14 @@ h2 {
 
 .worker-actions .talk {
   background: linear-gradient(135deg, #172b35, #2878c7);
+}
+
+.worker-actions .alarm-action {
+  background: linear-gradient(135deg, #5f1010, #b42020);
+}
+
+.worker-card.helmet-alarm .alarm-action {
+  background: linear-gradient(135deg, #172b35, #5f1010);
 }
 
 .triangle-alert {
@@ -2146,6 +2195,29 @@ h2 {
   color: #111820 !important;
 }
 
+.site-alert-critical {
+  border-color: rgba(95, 16, 16, 0.72) !important;
+  background: linear-gradient(180deg, #ffffff, #ffe2de) !important;
+  box-shadow: 0 16px 34px rgba(95, 16, 16, 0.18);
+}
+
+.site-alert-critical .site-alert-effect {
+  background: rgba(95, 16, 16, 0.1);
+}
+
+.site-alert-critical .site-alert-ring {
+  border-color: #5f1010;
+  background: #5f1010;
+  box-shadow:
+    0 0 0 8px rgba(95, 16, 16, 0.12),
+    0 0 22px rgba(95, 16, 16, 0.28);
+}
+
+.site-alert-critical .site-alert-symbol {
+  color: #ffffff !important;
+  animation-duration: 0.75s;
+}
+
 .worker-card.detail-open {
   cursor: pointer;
 }
@@ -2218,6 +2290,14 @@ h2 {
   --focus-panel: rgba(255, 245, 244, 0.95);
   --focus-line: rgba(223, 75, 66, 0.78);
   background: rgba(255, 239, 238, 0.52);
+}
+
+.worker-focus-layer.focus-critical,
+.worker-focus-layer.focus-helmet-alarm {
+  --focus-bg: rgba(95, 16, 16, 0.24);
+  --focus-panel: rgba(255, 237, 234, 0.96);
+  --focus-line: rgba(95, 16, 16, 0.86);
+  background: rgba(255, 226, 222, 0.58);
 }
 
 .worker-focus-content {

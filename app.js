@@ -10,6 +10,8 @@ const workers = Array.from({ length: WORKER_COUNT }, (_, index) => ({
   temperature: 36.2 + Math.random() * 1.2,
   dust: 45 + Math.random() * 78,
   fallen: false,
+  helmetAlarm: false,
+  alarmTime: null,
   onDuty: index % 9 !== 0,
   heartRate: 74 + Math.round(Math.random() * 18),
   battery: 72 + Math.round(Math.random() * 26),
@@ -108,15 +110,16 @@ function handleBroadcast(button) {
   const fallenCount = workers.filter((worker) => worker.fallen).length;
   const highTempCount = workers.filter((worker) => worker.temperature >= TEMP_LIMIT).length;
   const highDustCount = workers.filter((worker) => worker.dust >= DUST_LIMIT).length;
+  const helmetAlarmCount = workers.filter((worker) => worker.helmetAlarm).length;
   const originalText = button.textContent;
   const label = type === "rest" ? "通知休息" : "告知异常";
-  const detail = getBroadcastDetail(type, onDutyWorkers.length, fallenCount, highTempCount, highDustCount);
+  const detail = getBroadcastDetail(type, onDutyWorkers.length, helmetAlarmCount, fallenCount, highTempCount, highDustCount);
 
   lastRemoteAction = `全场${label} ${onDutyWorkers.length}人`;
   if (siteEls.broadcastStatus) siteEls.broadcastStatus.textContent = detail;
   button.textContent = "已发送";
   button.classList.add("is-sent");
-  renderSafetyAside(abnormalCount, fallenCount);
+  renderSafetyAside(abnormalCount, fallenCount, helmetAlarmCount);
 
   window.setTimeout(() => {
     button.textContent = originalText;
@@ -124,9 +127,10 @@ function handleBroadcast(button) {
   }, 900);
 }
 
-function getBroadcastDetail(type, onDutyCount, fallenCount, highTempCount, highDustCount) {
+function getBroadcastDetail(type, onDutyCount, helmetAlarmCount, fallenCount, highTempCount, highDustCount) {
   if (!onDutyCount) return "暂无在岗工人";
   if (type === "rest") return `已通知 ${onDutyCount} 名在岗工人休息`;
+  if (helmetAlarmCount) return `已广播头盔报警，覆盖 ${onDutyCount} 名在岗工人`;
   if (fallenCount) return `已广播摔倒异常，覆盖 ${onDutyCount} 名在岗工人`;
   if (highTempCount) return `已广播体温异常，覆盖 ${onDutyCount} 名在岗工人`;
   if (highDustCount) return `已广播粉尘异常，覆盖 ${onDutyCount} 名在岗工人`;
@@ -165,14 +169,15 @@ function render() {
   const priorityWorkers = ranked.slice(0, PRIORITY_SIZE);
   const abnormalCount = workers.filter((worker) => getWorkerRisk(worker).level !== "normal").length;
   const fallenCount = workers.filter((worker) => worker.fallen).length;
+  const helmetAlarmCount = workers.filter((worker) => worker.helmetAlarm).length;
   const now = new Date();
 
   siteEls.priorityCount.textContent = `${abnormalCount} 人异常`;
   siteEls.workerPageTime.textContent = `更新时间：${now.toLocaleString("zh-CN")}`;
 
   renderWeather(now);
-  renderSiteEnvironment(abnormalCount, fallenCount);
-  renderSafetyAside(abnormalCount, fallenCount);
+  renderSiteEnvironment(abnormalCount, fallenCount, helmetAlarmCount);
+  renderSafetyAside(abnormalCount, fallenCount, helmetAlarmCount);
   renderWorkerGrid(priorityWorkerGrid, priorityWorkers, true);
   renderWorkerGrid(allWorkerGrid, ranked, false);
   if (focusedWorkerId) showWorkerFocus(focusedWorkerId);
@@ -312,7 +317,7 @@ function getTimePeriodLabel(date) {
   return "夜间时段";
 }
 
-function renderSiteEnvironment(abnormalCount, fallenCount) {
+function renderSiteEnvironment(abnormalCount, fallenCount, helmetAlarmCount) {
   const avgTemp = average(workers.map((worker) => worker.temperature)) - 9.6;
   const avgDust = average(workers.map((worker) => worker.dust));
   const dustIntensity = getSiteDustIntensity(avgDust);
@@ -321,15 +326,15 @@ function renderSiteEnvironment(abnormalCount, fallenCount) {
   siteEls.fallSummary.textContent = `${abnormalCount} 次`;
   siteEls.tempState.textContent = getSiteTempState(avgTemp);
   siteEls.dustState.textContent = getSiteDustState(avgDust);
-  siteEls.alertState.textContent = getSiteAlertState(abnormalCount, fallenCount);
+  siteEls.alertState.textContent = getSiteAlertState(abnormalCount, fallenCount, helmetAlarmCount);
   siteEls.tempCard.className = `site-data-card site-temp-card ${getSiteTempClass(avgTemp)}`;
   siteEls.dustCard.className = `site-data-card site-dust-card ${getSiteDustClass(avgDust)}`;
   siteEls.dustCard.style.setProperty("--site-dust-opacity", dustIntensity.opacity.toFixed(2));
   siteEls.dustCard.style.setProperty("--site-dust-speed", `${dustIntensity.speed}s`);
-  siteEls.alertCard.className = `site-data-card site-alert-card ${getSiteAlertClass(abnormalCount)}`;
+  siteEls.alertCard.className = `site-data-card site-alert-card ${getSiteAlertClass(abnormalCount, helmetAlarmCount)}`;
   siteEls.tempState.style.color = avgTemp >= 29 ? "var(--red)" : avgTemp <= 22 ? "var(--blue)" : "var(--muted)";
   siteEls.dustState.style.color = avgDust >= DUST_LIMIT ? "var(--red)" : avgDust >= 95 ? "#8a5b08" : "var(--muted)";
-  siteEls.alertState.style.color = abnormalCount >= 9 ? "var(--red)" : abnormalCount >= 4 ? "#8a5b08" : "var(--green)";
+  siteEls.alertState.style.color = helmetAlarmCount ? "#5f1010" : abnormalCount >= 9 ? "var(--red)" : abnormalCount >= 4 ? "#8a5b08" : "var(--green)";
 }
 
 function getSiteTempClass(temp) {
@@ -364,26 +369,28 @@ function getSiteDustIntensity(dust) {
   return { opacity, speed };
 }
 
-function getSiteAlertClass(count) {
+function getSiteAlertClass(count, helmetAlarmCount = 0) {
+  if (helmetAlarmCount) return "site-alert-critical";
   if (count >= 9) return "site-alert-high";
   if (count >= 4) return "site-alert-mid";
   return "site-alert-low";
 }
 
-function getSiteAlertState(count, fallenCount) {
+function getSiteAlertState(count, fallenCount, helmetAlarmCount) {
+  if (helmetAlarmCount) return `深红紧急，${helmetAlarmCount} 起头盔报警`;
   if (count >= 9) return fallenCount ? `红色高频，${fallenCount} 起摔倒` : "红色高频";
   if (count >= 4) return fallenCount ? `橙色关注，${fallenCount} 起摔倒` : "橙色关注";
   return fallenCount ? `绿色低频，${fallenCount} 起摔倒` : "绿色低频";
 }
 
-function renderSafetyAside(abnormalCount, fallenCount) {
+function renderSafetyAside(abnormalCount, fallenCount, helmetAlarmCount) {
   const onDutyCount = workers.filter((worker) => worker.onDuty).length;
   const lowBatteryCount = workers.filter((worker) => worker.battery <= 25).length;
   const highDustCount = workers.filter((worker) => worker.dust >= DUST_LIMIT).length;
   const highTempCount = workers.filter((worker) => worker.temperature >= TEMP_LIMIT).length;
-  const safetyLevel = fallenCount > 0 || highTempCount > 2 || highDustCount > 2 ? "危险" : abnormalCount > 0 ? "需关注" : "平稳";
+  const safetyLevel = helmetAlarmCount > 0 || fallenCount > 0 || highTempCount > 2 || highDustCount > 2 ? "危险" : abnormalCount > 0 ? "需关注" : "平稳";
 
-  siteEls.safetyState.textContent = safetyLevel === "危险" ? "当前存在高优先级安全风险" : safetyLevel === "需关注" ? "现场需要持续关注" : "现场安全情况平稳";
+  siteEls.safetyState.textContent = helmetAlarmCount > 0 ? "当前存在头盔主动报警，需立即定位处理" : safetyLevel === "危险" ? "当前存在高优先级安全风险" : safetyLevel === "需关注" ? "现场需要持续关注" : "现场安全情况平稳";
   siteEls.safetyState.className = `safety-state state-${safetyLevel === "危险" ? "danger" : safetyLevel === "需关注" ? "warning" : "normal"}`;
   siteEls.onDutyCount.textContent = `${onDutyCount}/${WORKER_COUNT}`;
   siteEls.asideAbnormalCount.textContent = abnormalCount;
@@ -392,6 +399,7 @@ function renderSafetyAside(abnormalCount, fallenCount) {
   if (siteEls.broadcastTarget) siteEls.broadcastTarget.textContent = `在岗 ${onDutyCount} 人`;
 
   const tips = [];
+  if (helmetAlarmCount) tips.push(`${helmetAlarmCount} 名工人按下头盔后部报警按钮，建议立刻对话并定位核查。`);
   if (fallenCount) tips.push(`${fallenCount} 名工人触发摔倒警告，建议立即联系现场负责人。`);
   if (highTempCount) tips.push(`${highTempCount} 名工人体温偏高，建议安排休息和复测。`);
   if (highDustCount) tips.push(`${highDustCount} 个头盔检测到高粉尘，建议检查降尘措施。`);
@@ -421,13 +429,26 @@ function renderWorkerGrid(container, list, compact) {
   container.querySelectorAll(".remote-action").forEach((button) => {
     button.addEventListener("click", () => {
       const worker = workers.find((item) => item.id === Number(button.dataset.id));
+      if (button.dataset.action === "helmet-alarm") {
+        handleHelmetAlarm(worker);
+        return;
+      }
       const actionText = button.dataset.action === "talk" ? "已请求对话" : "已发送提醒";
       lastRemoteAction = `${worker.name} ${actionText}`;
       button.textContent = actionText;
-      renderSafetyAside(workers.filter((item) => getWorkerRisk(item).level !== "normal").length, workers.filter((item) => item.fallen).length);
+      renderSafetyAside(workers.filter((item) => getWorkerRisk(item).level !== "normal").length, workers.filter((item) => item.fallen).length, workers.filter((item) => item.helmetAlarm).length);
       window.setTimeout(render, 900);
     });
   });
+}
+
+function handleHelmetAlarm(worker) {
+  worker.helmetAlarm = !worker.helmetAlarm;
+  worker.alarmTime = worker.helmetAlarm ? new Date() : null;
+  worker.onDuty = true;
+  lastRemoteAction = worker.helmetAlarm ? `${worker.name} 触发头盔报警` : `${worker.name} 解除头盔报警`;
+  hideWorkerFocus();
+  render();
 }
 
 function renderWorkerCard(worker, compact) {
@@ -438,10 +459,12 @@ function renderWorkerCard(worker, compact) {
   const dustAlert = worker.dust >= DUST_LIMIT ? `<span class="metric-alert">!</span>` : "";
   const fallText = worker.fallen ? "摔倒警告" : "姿态正常";
   const fallIcon = worker.fallen ? `<span class="triangle-alert" aria-label="摔倒警告"></span>` : "";
+  const helmetAlarmText = worker.helmetAlarm ? "头盔主动报警" : "头盔报警未触发";
+  const helmetAlarmIcon = worker.helmetAlarm ? `<span class="helmet-alarm-dot" aria-label="头盔主动报警">!</span>` : "";
   const battery = getBatteryState(worker);
   const dutyClass = worker.onDuty ? "on-duty" : "off-duty";
 
-  return `<article class="worker-card detail-open ${risk.level}${worker.fallen ? " fallen" : ""} ${dutyClass}" data-id="${worker.id}">
+  return `<article class="worker-card detail-open ${risk.level}${worker.fallen ? " fallen" : ""}${worker.helmetAlarm ? " helmet-alarm" : ""} ${dutyClass}" data-id="${worker.id}">
     <div class="worker-head">
       <div class="name-field">
         <label for="worker-${worker.id}-${compact ? "p" : "a"}">工人姓名</label>
@@ -465,9 +488,11 @@ function renderWorkerCard(worker, compact) {
       <em>${battery.label}</em>
     </div>
     <div class="fall-line ${worker.fallen ? "is-fallen" : ""}">${fallIcon}<span>${fallText}</span></div>
+    <div class="helmet-alarm-line ${worker.helmetAlarm ? "is-active" : ""}">${helmetAlarmIcon}<span>${helmetAlarmText}</span></div>
     <div class="worker-actions">
       <button class="remote-action" data-action="alert" data-id="${worker.id}" type="button">远程提醒</button>
       <button class="remote-action talk" data-action="talk" data-id="${worker.id}" type="button">对话</button>
+      <button class="remote-action alarm-action" data-action="helmet-alarm" data-id="${worker.id}" type="button">${worker.helmetAlarm ? "解除报警" : "头盔报警"}</button>
     </div>
   </article>`;
 }
@@ -481,7 +506,8 @@ function showWorkerFocus(workerId) {
   const tempLight = getMetricLight("temperature", worker);
   const dustLight = getMetricLight("dust", worker);
   const battery = getBatteryState(worker);
-  const layerClass = `worker-focus-layer is-visible focus-${risk.level}${worker.fallen ? " focus-fallen" : ""}`;
+  const layerClass = `worker-focus-layer is-visible focus-${risk.level}${worker.fallen ? " focus-fallen" : ""}${worker.helmetAlarm ? " focus-helmet-alarm" : ""}`;
+  const alarmTime = worker.alarmTime ? new Date(worker.alarmTime).toLocaleTimeString("zh-CN") : "未触发";
 
   workerFocusLayer.className = layerClass;
   workerFocusLayer.setAttribute("aria-hidden", "false");
@@ -499,6 +525,8 @@ function showWorkerFocus(workerId) {
     <div class="focus-mini-grid">
       <span>心率 <strong>${worker.heartRate} bpm</strong></span>
       <span>头盔电量 <strong>${worker.battery}%</strong></span>
+      <span>头盔报警 <strong>${worker.helmetAlarm ? "已触发" : "未触发"}</strong></span>
+      <span>报警时间 <strong>${alarmTime}</strong></span>
     </div>
   </section>
   <div class="focus-connector" aria-hidden="true">
@@ -524,6 +552,11 @@ function showWorkerFocus(workerId) {
         <span>姿态</span>
         <strong>${worker.fallen ? "摔倒警告" : "姿态正常"}</strong>
         <small>${worker.fallen ? "最高优先级" : "未触发摔倒"}</small>
+      </article>
+      <article>
+        <span>头盔报警</span>
+        <strong>${worker.helmetAlarm ? "主动报警" : "未触发"}</strong>
+        <small>${worker.helmetAlarm ? "深红紧急，优先定位处理" : "头盔后部按钮未触发"}</small>
       </article>
       <article>
         <span>电量</span>
@@ -554,11 +587,12 @@ function showWorkerDetail(workerId) {
       <div class="detail-row"><span>体温</span><strong>${worker.temperature.toFixed(1)} °C</strong></div>
       <div class="detail-row"><span>附近粉尘浓度</span><strong>${worker.dust.toFixed(0)} µg/m³</strong></div>
       <div class="detail-row"><span>是否摔倒</span><strong>${worker.fallen ? "是" : "否"}</strong></div>
+      <div class="detail-row"><span>头盔报警</span><strong>${worker.helmetAlarm ? "已主动报警" : "未触发"}</strong></div>
       <div class="detail-row"><span>是否在岗</span><strong>${worker.onDuty ? "在岗" : "离岗"}</strong></div>
       <div class="detail-row"><span>心率</span><strong>${worker.heartRate} bpm</strong></div>
       <div class="detail-row"><span>安全帽电量</span><strong>${worker.battery}%</strong></div>
     </div>
-    <p class="detail-note">异常规则：体温达到 ${TEMP_LIMIT} °C、粉尘浓度达到 ${DUST_LIMIT} µg/m³ 或检测到摔倒时，会被自动排到列表前方。</p>
+    <p class="detail-note">异常规则：按下头盔后部报警按钮会被置为最紧急；其次是摔倒、体温异常、粉尘异常。</p>
   </section>`;
   workerDialog.showModal();
 }
@@ -571,6 +605,9 @@ function getWorkerRisk(worker) {
   const tempScore = Math.max(0, worker.temperature - 36.8) * 100;
   const dustScore = Math.max(0, worker.dust - 80) * 1.5;
 
+  if (worker.helmetAlarm) {
+    return { level: "critical", label: "头盔报警", score: 5200 + tempScore + dustScore };
+  }
   if (worker.fallen) {
     return { level: "danger", label: "摔倒警告", score: 4000 + tempScore + dustScore };
   }
