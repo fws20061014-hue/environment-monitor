@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>工人图片上传</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="image-upload-shell">
+      <header class="upload-topbar">
+        <div>
+          <p class="eyebrow">Worker Photo Upload</p>
+          <h1>工人图片上传</h1>
+        </div>
+        <a class="top-action-link" href="index.html">返回控制台</a>
+      </header>
+
+      <section class="upload-layout" aria-label="工人图片上传区域">
+        <form id="workerImageForm" class="upload-panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Photo Form</p>
+              <h2>上传工人照片</h2>
+            </div>
+            <span id="workerImageStatus">等待选择图片</span>
+          </div>
+
+          <label class="upload-field">
+            <span>工人编号</span>
+            <select id="workerId" name="workerId" required></select>
+          </label>
+
+          <label class="upload-field">
+            <span>工人姓名</span>
+            <input id="workerName" name="workerName" type="text" maxlength="40" placeholder="可填写真实姓名或编号备注" />
+          </label>
+
+          <label class="upload-field">
+            <span>图片文件</span>
+            <input id="workerPhoto" name="photo" type="file" accept="image/*" required />
+          </label>
+
+          <label class="upload-field">
+            <span>备注</span>
+            <textarea id="workerNote" name="note" maxlength="200" placeholder="例如：入场登记照、临时人员、班组信息"></textarea>
+          </label>
+
+          <button id="workerUploadButton" type="submit">上传图片</button>
+        </form>
+
+        <aside class="upload-preview-panel" aria-label="图片预览">
+          <div class="preview-frame">
+            <img id="workerPhotoPreview" alt="待上传工人图片预览" />
+            <span id="previewPlaceholder">选择图片后在这里预览</span>
+          </div>
+          <div class="preview-meta">
+            <strong id="previewName">未选择文件</strong>
+            <span id="previewSize">文件大小：-</span>
+            <span>支持 JPG、PNG、WEBP、GIF 等图片格式</span>
+          </div>
+        </aside>
+      </section>
+
+      <section class="worker-photo-list-section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Recent Photos</p>
+            <h2>最近上传记录</h2>
+          </div>
+          <span id="workerImageCount">0 条记录</span>
+        </div>
+        <div id="workerImageList" class="worker-photo-grid"></div>
+      </section>
+    </main>
+
+    <script src="config.js" charset="UTF-8"></script>
+    <script src="worker-images.js" charset="UTF-8"></script>
+  </body>
+</html>

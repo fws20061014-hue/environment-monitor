@@ -7,6 +7,7 @@ import { randomUUID } from "node:crypto";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dataDir = join(__dirname, "data");
 const dataFile = join(dataDir, "feedback.json");
+const workerImagesFile = join(dataDir, "worker-images.json");
 const publicDir = join(__dirname, "public");
 const uploadDir = join(__dirname, "uploads");
 const port = Number(process.env.PORT || 3000);
@@ -24,6 +25,21 @@ const server = createServer(async (request, response) => {
 
     if (request.method === "GET" && url.pathname === "/health") {
       sendJson(response, 200, { ok: true });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/worker-images") {
+      const { fields, attachments } = await readFeedbackBody(request);
+      const workerImage = normalizeWorkerImage(fields, attachments);
+      const list = await readWorkerImages();
+      list.unshift(workerImage);
+      await writeWorkerImages(list.slice(0, 1000));
+      sendJson(response, 201, workerImage);
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/worker-images") {
+      sendJson(response, 200, await readWorkerImages());
       return;
     }
 
@@ -201,6 +217,28 @@ function normalizeFeedback(input, attachments = []) {
   return feedback;
 }
 
+function normalizeWorkerImage(input, attachments = []) {
+  const image = attachments[0];
+  if (!image) {
+    throw Object.assign(new Error("请先选择工人图片"), { statusCode: 400 });
+  }
+  if (!image.type.startsWith("image/")) {
+    throw Object.assign(new Error("工人图片仅支持图片文件"), { statusCode: 400 });
+  }
+
+  const workerId = requiredText(input.workerId, "工人编号");
+  const fallbackName = /^\d+$/.test(workerId) ? `工人 ${String(Number(workerId)).padStart(2, "0")}` : "未命名工人";
+
+  return {
+    id: randomUUID(),
+    workerId,
+    workerName: optionalText(input.workerName) || fallbackName,
+    note: optionalText(input.note),
+    image,
+    time: new Date().toISOString(),
+  };
+}
+
 function requiredText(value, label) {
   const text = optionalText(value);
   if (!text) {
@@ -225,6 +263,20 @@ async function readFeedback() {
 async function writeFeedback(list) {
   await mkdir(dataDir, { recursive: true });
   await writeFile(dataFile, JSON.stringify(list, null, 2), "utf8");
+}
+
+async function readWorkerImages() {
+  try {
+    const raw = await readFile(workerImagesFile, "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+async function writeWorkerImages(list) {
+  await mkdir(dataDir, { recursive: true });
+  await writeFile(workerImagesFile, JSON.stringify(list, null, 2), "utf8");
 }
 
 function summarizeFeedback(list) {
