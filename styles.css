@@ -987,6 +987,64 @@ h2 {
   line-height: 1.6;
 }
 
+.broadcast-panel {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: linear-gradient(180deg, #ffffff, #f7fbfc);
+}
+
+.broadcast-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.broadcast-head span {
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.broadcast-head small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.broadcast-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.broadcast-action {
+  min-height: 38px;
+  padding: 0 10px;
+  box-shadow: none;
+}
+
+.broadcast-action.hazard {
+  background: linear-gradient(135deg, #df4b42, #f28b57);
+}
+
+.broadcast-action.rest {
+  background: linear-gradient(135deg, #1f9d68, #2878c7);
+}
+
+.broadcast-action.is-sent {
+  filter: saturate(1.15) brightness(1.04);
+}
+
+#broadcastStatus {
+  display: block;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
 .section-head,
 .subbar {
   display: flex;

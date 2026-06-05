@@ -25,6 +25,7 @@ const priorityWorkerGrid = document.querySelector("#priorityWorkerGrid");
 const allWorkerGrid = document.querySelector("#allWorkerGrid");
 const workerDialog = document.querySelector("#workerDialog");
 const workerDetail = document.querySelector("#workerDetail");
+const broadcastButtons = document.querySelectorAll(".broadcast-action");
 
 const weatherEls = {
   board: document.querySelector("#weatherBoard"),
@@ -63,6 +64,8 @@ const siteEls = {
   lowBatteryCount: document.querySelector("#lowBatteryCount"),
   lastRemoteAction: document.querySelector("#lastRemoteAction"),
   safetyList: document.querySelector("#safetyList"),
+  broadcastTarget: document.querySelector("#broadcastTarget"),
+  broadcastStatus: document.querySelector("#broadcastStatus"),
 };
 
 let tick = 0;
@@ -80,9 +83,45 @@ backDashboard.addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
+broadcastButtons.forEach((button) => {
+  button.addEventListener("click", () => handleBroadcast(button));
+});
+
 function saveNames() {
   const names = Object.fromEntries(workers.map((worker) => [worker.id, worker.name]));
   localStorage.setItem("helmetWorkerNames", JSON.stringify(names));
+}
+
+function handleBroadcast(button) {
+  const type = button.dataset.broadcast;
+  const onDutyWorkers = workers.filter((worker) => worker.onDuty);
+  const abnormalCount = workers.filter((worker) => getWorkerRisk(worker).level !== "normal").length;
+  const fallenCount = workers.filter((worker) => worker.fallen).length;
+  const highTempCount = workers.filter((worker) => worker.temperature >= TEMP_LIMIT).length;
+  const highDustCount = workers.filter((worker) => worker.dust >= DUST_LIMIT).length;
+  const originalText = button.textContent;
+  const label = type === "rest" ? "通知休息" : "告知异常";
+  const detail = getBroadcastDetail(type, onDutyWorkers.length, fallenCount, highTempCount, highDustCount);
+
+  lastRemoteAction = `全场${label} ${onDutyWorkers.length}人`;
+  if (siteEls.broadcastStatus) siteEls.broadcastStatus.textContent = detail;
+  button.textContent = "已发送";
+  button.classList.add("is-sent");
+  renderSafetyAside(abnormalCount, fallenCount);
+
+  window.setTimeout(() => {
+    button.textContent = originalText;
+    button.classList.remove("is-sent");
+  }, 900);
+}
+
+function getBroadcastDetail(type, onDutyCount, fallenCount, highTempCount, highDustCount) {
+  if (!onDutyCount) return "暂无在岗工人";
+  if (type === "rest") return `已通知 ${onDutyCount} 名在岗工人休息`;
+  if (fallenCount) return `已广播摔倒异常，覆盖 ${onDutyCount} 名在岗工人`;
+  if (highTempCount) return `已广播体温异常，覆盖 ${onDutyCount} 名在岗工人`;
+  if (highDustCount) return `已广播粉尘异常，覆盖 ${onDutyCount} 名在岗工人`;
+  return `已广播现场异常提醒，覆盖 ${onDutyCount} 名在岗工人`;
 }
 
 function updateSimulation() {
@@ -340,6 +379,7 @@ function renderSafetyAside(abnormalCount, fallenCount) {
   siteEls.asideAbnormalCount.textContent = abnormalCount;
   siteEls.lowBatteryCount.textContent = lowBatteryCount;
   siteEls.lastRemoteAction.textContent = lastRemoteAction;
+  if (siteEls.broadcastTarget) siteEls.broadcastTarget.textContent = `在岗 ${onDutyCount} 人`;
 
   const tips = [];
   if (fallenCount) tips.push(`${fallenCount} 名工人触发摔倒警告，建议立即联系现场负责人。`);
@@ -445,15 +485,25 @@ function getRankedWorkers() {
 }
 
 function getWorkerRisk(worker) {
-  let score = 0;
-  if (worker.temperature >= TEMP_LIMIT) score += 36 + (worker.temperature - TEMP_LIMIT) * 12;
-  if (worker.dust >= DUST_LIMIT) score += 28 + (worker.dust - DUST_LIMIT) * 0.7;
-  if (worker.fallen) score += 80;
+  const tempScore = Math.max(0, worker.temperature - 36.8) * 100;
+  const dustScore = Math.max(0, worker.dust - 80) * 1.5;
 
-  if (worker.fallen) return { level: "danger", label: "摔倒警告", score };
-  if (worker.temperature >= TEMP_LIMIT || worker.dust >= DUST_LIMIT) return { level: "danger", label: "危险" , score };
-  if (worker.temperature >= 37.1 || worker.dust >= 100) return { level: "warning", label: "关注", score: score + 12 };
-  return { level: "normal", label: "正常", score };
+  if (worker.fallen) {
+    return { level: "danger", label: "摔倒警告", score: 4000 + tempScore + dustScore };
+  }
+  if (worker.temperature >= TEMP_LIMIT) {
+    return { level: "danger", label: "体温异常", score: 3000 + tempScore };
+  }
+  if (worker.temperature >= 37.1) {
+    return { level: "warning", label: "体温关注", score: 2500 + tempScore };
+  }
+  if (worker.dust >= DUST_LIMIT) {
+    return { level: "danger", label: "粉尘异常", score: 1500 + dustScore };
+  }
+  if (worker.dust >= 100) {
+    return { level: "warning", label: "粉尘关注", score: 1000 + dustScore };
+  }
+  return { level: "normal", label: "正常", score: 0 };
 }
 
 function getMetricLight(type, worker) {
