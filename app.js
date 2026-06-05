@@ -9,7 +9,8 @@ const workers = Array.from({ length: WORKER_COUNT }, (_, index) => ({
   name: savedNames[index + 1] || `工人 ${String(index + 1).padStart(2, "0")}`,
   temperature: 36.2 + Math.random() * 1.2,
   dust: 45 + Math.random() * 78,
-  fallen: false,
+  fallen: index === 2,
+  demoFallen: index === 2,
   helmetAlarm: false,
   alarmTime: null,
   onDuty: index % 9 !== 0,
@@ -151,10 +152,10 @@ function updateSimulation() {
     worker.battery = Math.round(clamp(worker.battery - Math.random() * 0.18 + (worker.onDuty ? 0 : 0.04), 18, 100));
     worker.batteryTrend = worker.battery < previousBattery ? "down" : worker.battery > previousBattery ? "up" : "stable";
 
-    if (tick % 9 === 0 && Math.random() < 0.18) worker.fallen = !worker.fallen;
-    if (worker.fallen && Math.random() < 0.08) worker.fallen = false;
+    if (!worker.demoFallen && tick % 9 === 0 && Math.random() < 0.18) worker.fallen = !worker.fallen;
+    if (!worker.demoFallen && worker.fallen && Math.random() < 0.08) worker.fallen = false;
     if (tick % 16 === 0 && Math.random() < 0.12) worker.onDuty = !worker.onDuty;
-    if (index === 2 && tick < 8) worker.fallen = true;
+    if (worker.demoFallen) worker.fallen = true;
     if (index === 6 && tick % 12 < 6) worker.dust = Math.max(worker.dust, 132);
     if (index === 10 && tick % 14 < 5) worker.temperature = Math.max(worker.temperature, 37.8);
 
@@ -551,7 +552,7 @@ function showWorkerFocus(workerId) {
       <article>
         <span>姿态</span>
         <strong>${worker.fallen ? "摔倒警告" : "姿态正常"}</strong>
-        <small>${worker.fallen ? "最高优先级" : "未触发摔倒"}</small>
+        <small>${worker.fallen ? "最高优先级" : "姿态未见异常"}</small>
       </article>
       <article>
         <span>头盔报警</span>
@@ -586,7 +587,7 @@ function showWorkerDetail(workerId) {
       <div class="detail-row"><span>综合状态</span><strong>${risk.label}</strong></div>
       <div class="detail-row"><span>体温</span><strong>${worker.temperature.toFixed(1)} °C</strong></div>
       <div class="detail-row"><span>附近粉尘浓度</span><strong>${worker.dust.toFixed(0)} µg/m³</strong></div>
-      <div class="detail-row"><span>是否摔倒</span><strong>${worker.fallen ? "是" : "否"}</strong></div>
+      <div class="detail-row"><span>姿态状态</span><strong>${worker.fallen ? "摔倒警告" : "正常"}</strong></div>
       <div class="detail-row"><span>头盔报警</span><strong>${worker.helmetAlarm ? "已主动报警" : "未触发"}</strong></div>
       <div class="detail-row"><span>是否在岗</span><strong>${worker.onDuty ? "在岗" : "离岗"}</strong></div>
       <div class="detail-row"><span>心率</span><strong>${worker.heartRate} bpm</strong></div>
