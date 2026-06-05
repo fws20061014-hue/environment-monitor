@@ -200,6 +200,46 @@ h2 {
   grid-template-columns: 56px minmax(0, 1fr);
   align-items: center;
   gap: 12px;
+  isolation: isolate;
+  --weather-frame-color: rgba(40, 120, 199, 0.72);
+  --weather-frame-glow: rgba(40, 120, 199, 0.16);
+  --weather-frame-fill: rgba(40, 120, 199, 0.08);
+  --weather-frame-opacity: 0.58;
+  --weather-frame-speed: 3s;
+  animation: weatherCardGlow var(--weather-frame-speed) ease-in-out infinite;
+}
+
+.weather-data-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.weather-data-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, transparent, var(--weather-frame-color), transparent) top left / 180% 2px no-repeat,
+    linear-gradient(90deg, transparent, var(--weather-frame-color), transparent) bottom right / 180% 2px no-repeat,
+    linear-gradient(0deg, transparent, var(--weather-frame-color), transparent) left bottom / 2px 180% no-repeat,
+    linear-gradient(0deg, transparent, var(--weather-frame-color), transparent) right top / 2px 180% no-repeat;
+  opacity: var(--weather-frame-opacity);
+  pointer-events: none;
+  animation: weatherFrameSlide var(--weather-frame-speed) linear infinite;
+}
+
+.weather-data-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--weather-frame-color);
+  opacity: 0.4;
+  pointer-events: none;
+  animation: weatherFrameTrace var(--weather-frame-speed) ease-in-out infinite;
 }
 
 .mini-weather-icon {
@@ -431,6 +471,25 @@ h2 {
   background: linear-gradient(180deg, #ffffff, #eef8ff) !important;
 }
 
+.humidity-normal {
+  --weather-frame-color: rgba(40, 120, 199, 0.58);
+  --weather-frame-glow: rgba(40, 120, 199, 0.12);
+  --weather-frame-fill: rgba(40, 120, 199, 0.06);
+}
+
+.humidity-dry {
+  --weather-frame-color: rgba(142, 165, 176, 0.55);
+  --weather-frame-glow: rgba(142, 165, 176, 0.12);
+  --weather-frame-fill: rgba(142, 165, 176, 0.06);
+  --weather-frame-speed: 3.6s;
+}
+
+.humidity-wet {
+  --weather-frame-color: rgba(40, 120, 199, 0.82);
+  --weather-frame-glow: rgba(40, 120, 199, 0.2);
+  --weather-frame-fill: rgba(40, 120, 199, 0.1);
+}
+
 .wind-mini {
   display: grid;
   align-content: center;
@@ -463,6 +522,21 @@ h2 {
 .wind-strong .wind-mini span {
   background: var(--yellow);
   animation-duration: var(--wind-duration, 0.9s);
+}
+
+.wind-normal {
+  --weather-frame-color: rgba(40, 120, 199, 0.62);
+  --weather-frame-glow: rgba(40, 120, 199, 0.12);
+  --weather-frame-fill: rgba(40, 120, 199, 0.06);
+  --weather-frame-speed: var(--wind-duration, 1.6s);
+}
+
+.wind-strong {
+  --weather-frame-color: rgba(242, 180, 63, 0.9);
+  --weather-frame-glow: rgba(242, 180, 63, 0.22);
+  --weather-frame-fill: rgba(242, 180, 63, 0.12);
+  --weather-frame-opacity: 0.82;
+  --weather-frame-speed: var(--wind-duration, 0.9s);
 }
 
 .time-mini .clock-face {
@@ -553,18 +627,34 @@ h2 {
 }
 
 .time-dawn {
+  --weather-frame-color: rgba(242, 180, 63, 0.78);
+  --weather-frame-glow: rgba(242, 180, 63, 0.18);
+  --weather-frame-fill: rgba(242, 180, 63, 0.08);
+  --weather-frame-speed: 3.2s;
   background: linear-gradient(180deg, #ffffff, #fff7ec) !important;
 }
 
 .time-day {
+  --weather-frame-color: rgba(40, 120, 199, 0.7);
+  --weather-frame-glow: rgba(40, 120, 199, 0.14);
+  --weather-frame-fill: rgba(40, 120, 199, 0.07);
+  --weather-frame-speed: 3s;
   background: linear-gradient(180deg, #ffffff, #f0fbff) !important;
 }
 
 .time-dusk {
+  --weather-frame-color: rgba(240, 143, 79, 0.86);
+  --weather-frame-glow: rgba(240, 143, 79, 0.2);
+  --weather-frame-fill: rgba(240, 143, 79, 0.1);
+  --weather-frame-speed: 2.7s;
   background: linear-gradient(180deg, #ffffff, #fff0e5) !important;
 }
 
 .time-night {
+  --weather-frame-color: rgba(205, 229, 255, 0.76);
+  --weather-frame-glow: rgba(205, 229, 255, 0.22);
+  --weather-frame-fill: rgba(205, 229, 255, 0.1);
+  --weather-frame-speed: 3.8s;
   color: #f7fbff;
   background: linear-gradient(180deg, #1d3857, #284d70) !important;
   border-color: rgba(205, 229, 255, 0.26) !important;
@@ -640,16 +730,29 @@ h2 {
 }
 
 .temp-cold {
+  --weather-frame-color: rgba(40, 120, 199, 0.72);
+  --weather-frame-glow: rgba(40, 120, 199, 0.16);
+  --weather-frame-fill: rgba(40, 120, 199, 0.08);
+  --weather-frame-speed: 3.6s;
   border-color: rgba(40, 120, 199, 0.28) !important;
   background: linear-gradient(180deg, #ffffff, #f0f8ff) !important;
 }
 
 .temp-mild {
+  --weather-frame-color: rgba(31, 157, 104, 0.7);
+  --weather-frame-glow: rgba(31, 157, 104, 0.14);
+  --weather-frame-fill: rgba(31, 157, 104, 0.07);
+  --weather-frame-speed: 3.1s;
   border-color: rgba(31, 157, 104, 0.22) !important;
   background: linear-gradient(180deg, #ffffff, #f2fbf6) !important;
 }
 
 .temp-hot {
+  --weather-frame-color: rgba(223, 75, 66, 0.88);
+  --weather-frame-glow: rgba(223, 75, 66, 0.2);
+  --weather-frame-fill: rgba(223, 75, 66, 0.1);
+  --weather-frame-opacity: 0.8;
+  --weather-frame-speed: 1.9s;
   border-color: rgba(223, 75, 66, 0.42) !important;
   background: linear-gradient(180deg, #ffffff, #fff1f0) !important;
 }
@@ -1773,6 +1876,50 @@ h2 {
 @keyframes clockSpin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes weatherFrameSlide {
+  0% {
+    background-position:
+      -120% 0,
+      120% 100%,
+      0 120%,
+      100% -120%;
+  }
+
+  100% {
+    background-position:
+      120% 0,
+      -120% 100%,
+      0 -120%,
+      100% 120%;
+  }
+}
+
+@keyframes weatherFrameTrace {
+  0%,
+  100% {
+    opacity: 0.32;
+  }
+
+  50% {
+    opacity: 0.72;
+  }
+}
+
+@keyframes weatherCardGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 10px 22px rgba(23, 43, 53, 0.04),
+      0 0 0 0 var(--weather-frame-fill);
+  }
+
+  50% {
+    box-shadow:
+      0 14px 30px var(--weather-frame-glow),
+      0 0 0 4px var(--weather-frame-fill);
   }
 }
 

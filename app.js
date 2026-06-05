@@ -136,6 +136,7 @@ function renderWeather(now) {
   const avgDust = average(workers.map((worker) => worker.dust));
   const weather = getWeatherState(outdoorTemp, humidity, wind, avgDust);
   const fogOpacity = getFogOpacity(humidity);
+  const tempFrame = getTempFrameStyle(outdoorTemp);
   const windDuration = Math.max(0.75, 2.2 - wind * 0.38).toFixed(2);
 
   weatherEls.board.className = `weather-board weather-dynamic weather-${weather.className}`;
@@ -151,11 +152,17 @@ function renderWeather(now) {
   weatherEls.source.textContent = `动态模拟 · ${getTimePeriodLabel(now)}`;
 
   weatherEls.tempCard.className = `weather-card weather-data-card ${getTempCardClass(outdoorTemp)}`;
+  weatherEls.tempCard.style.setProperty("--weather-frame-speed", tempFrame.speed);
+  weatherEls.tempCard.style.setProperty("--weather-frame-opacity", tempFrame.opacity);
   weatherEls.humidityCard.className = `weather-card weather-data-card ${getHumidityCardClass(humidity)}`;
   weatherEls.humidityCard.style.setProperty("--fog-opacity", fogOpacity.toFixed(2));
   weatherEls.humidityCard.style.setProperty("--fog-duration", `${Math.max(1.2, 3.4 - fogOpacity * 2).toFixed(1)}s`);
+  weatherEls.humidityCard.style.setProperty("--weather-frame-opacity", clamp(fogOpacity + 0.24, 0.45, 0.95).toFixed(2));
+  weatherEls.humidityCard.style.setProperty("--weather-frame-speed", `${Math.max(1.5, 3.7 - fogOpacity * 1.45).toFixed(1)}s`);
   weatherEls.windCard.className = `weather-card weather-data-card ${getWindCardClass(wind)}`;
   weatherEls.windCard.style.setProperty("--wind-duration", `${windDuration}s`);
+  weatherEls.windCard.style.setProperty("--weather-frame-speed", `${windDuration}s`);
+  weatherEls.windCard.style.setProperty("--weather-frame-opacity", wind >= 3 ? "0.88" : "0.58");
   weatherEls.timeCard.className = `weather-card weather-data-card time-active ${getTimeCardClass(now)}`;
 }
 
@@ -205,6 +212,25 @@ function getTempNote(temp) {
   if (temp <= 22.5) return "低温提示";
   if (temp >= 27.5) return "高温关注";
   return "适宜作业";
+}
+
+function getTempFrameStyle(temp) {
+  if (temp >= 27.5) {
+    return {
+      speed: `${Math.max(1.45, 2.2 - (temp - 27.5) * 0.16).toFixed(2)}s`,
+      opacity: "0.84",
+    };
+  }
+  if (temp <= 22.5) {
+    return {
+      speed: `${Math.max(2.6, 3.9 - (22.5 - temp) * 0.18).toFixed(2)}s`,
+      opacity: "0.68",
+    };
+  }
+  return {
+    speed: "3.1s",
+    opacity: "0.58",
+  };
 }
 
 function getHumidityCardClass(humidity) {
