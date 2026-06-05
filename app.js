@@ -460,7 +460,7 @@ function renderWorkerCard(worker, compact) {
   const fallText = worker.fallen ? "摔倒警告" : "姿态正常";
   const fallIcon = worker.fallen ? `<span class="triangle-alert" aria-label="摔倒警告"></span>` : "";
   const helmetAlarmText = worker.helmetAlarm ? "头盔主动报警" : "头盔报警未触发";
-  const helmetAlarmIcon = worker.helmetAlarm ? `<span class="helmet-alarm-dot" aria-label="头盔主动报警">!</span>` : "";
+  const helmetAlarmIcon = `<span class="helmet-alarm-dot ${worker.helmetAlarm ? "is-active" : "is-idle"}" aria-label="${worker.helmetAlarm ? "头盔主动报警" : "头盔未报警"}">${worker.helmetAlarm ? "!" : "OK"}</span>`;
   const battery = getBatteryState(worker);
   const dutyClass = worker.onDuty ? "on-duty" : "off-duty";
 
@@ -488,11 +488,11 @@ function renderWorkerCard(worker, compact) {
       <em>${battery.label}</em>
     </div>
     <div class="fall-line ${worker.fallen ? "is-fallen" : ""}">${fallIcon}<span>${fallText}</span></div>
-    <div class="helmet-alarm-line ${worker.helmetAlarm ? "is-active" : ""}">${helmetAlarmIcon}<span>${helmetAlarmText}</span></div>
+    <div class="helmet-alarm-line ${worker.helmetAlarm ? "is-active" : "is-idle"}">${helmetAlarmIcon}<span>${helmetAlarmText}</span></div>
     <div class="worker-actions">
       <button class="remote-action" data-action="alert" data-id="${worker.id}" type="button">远程提醒</button>
       <button class="remote-action talk" data-action="talk" data-id="${worker.id}" type="button">对话</button>
-      <button class="remote-action alarm-action" data-action="helmet-alarm" data-id="${worker.id}" type="button">${worker.helmetAlarm ? "解除报警" : "头盔报警"}</button>
+      <button class="remote-action alarm-action ${worker.helmetAlarm ? "is-active" : "is-idle"}" data-action="helmet-alarm" data-id="${worker.id}" type="button">${worker.helmetAlarm ? "解除报警" : "头盔报警"}</button>
     </div>
   </article>`;
 }
