@@ -32,8 +32,8 @@
         <span>注意头盔电量，保持通信在线</span>
       </div>
       <div class="intro-copy">
-        <p class="eyebrow">Helmet Safety Console</p>
-        <h1>智能安全帽后台控制台</h1>
+        <p class="eyebrow">Zhian Escort Helmet Console</p>
+        <h1>智安护航智能头盔管理平台</h1>
         <p>现场风险监测 · 工人状态联动 · 一键对话提醒</p>
         <button id="enterConsole" type="button">进入控制台</button>
       </div>
@@ -48,11 +48,26 @@
         <div class="top-actions">
           <span class="live-state"><i></i>模拟数据运行中</span>
           <a class="top-action-link" href="worker-images.html">工人图片上传</a>
+          <button id="toLocationPage" type="button">工人定位</button>
           <button id="toWorkersPage" type="button">查看全部工人</button>
         </div>
       </header>
 
       <section id="dashboardPage" class="page-view">
+        <section class="site-hero-panel" aria-label="项目总览">
+          <div class="site-hero-copy">
+            <p class="eyebrow">Smart Worksite Monitoring</p>
+            <h2>智安护航 · 工地智能头盔现场监测</h2>
+            <p>施工区 A-03 · 头盔数据链路在线 · 环境与人员风险同步研判</p>
+            <div class="site-hero-stats" aria-label="项目概况">
+              <span><strong>20</strong>登记头盔</span>
+              <span><strong>17</strong>当前在岗</span>
+              <span><strong>5s</strong>模拟刷新</span>
+              <span><strong>24h</strong>连续看护</span>
+            </div>
+          </div>
+        </section>
+
         <section class="weather-board weather-dynamic" id="weatherBoard" aria-label="天气类数据">
           <article class="weather-card weather-main-card">
             <div class="weather-visual" id="weatherVisual" aria-hidden="true">
@@ -237,6 +252,67 @@
         </div>
 
         <section id="allWorkerGrid" class="worker-grid all-worker-grid" aria-label="全部工人"></section>
+      </section>
+
+      <section id="locationPage" class="page-view is-hidden">
+        <div class="subbar location-subbar">
+          <button id="backDashboardFromLocation" type="button">返回首页</button>
+          <div>
+            <p class="eyebrow">Worker Location</p>
+            <h2>工人实时定位</h2>
+          </div>
+          <span id="locationPageTime">更新时间：--</span>
+        </div>
+
+        <section class="location-summary" aria-label="定位概况">
+          <article><span>定位总数</span><strong id="locationTotalCount">--</strong><small>已登记安全帽</small></article>
+          <article><span>当前在岗</span><strong id="locationDutyCount">--</strong><small>正在持续定位</small></article>
+          <article><span>异常位置</span><strong id="locationRiskCount">--</strong><small>优先核查目标</small></article>
+          <article><span>定位方式</span><strong id="locationMethod">模拟施工地图</strong><small id="locationMethodNote">本地坐标动态模拟</small></article>
+        </section>
+
+        <section class="location-layout">
+          <article class="location-map-panel">
+            <div class="location-panel-head">
+              <div>
+                <p class="eyebrow">Site Position Simulation</p>
+                <h3>施工区域实时位置分布</h3>
+              </div>
+              <div class="location-legend" aria-label="定位状态图例">
+                <span><i class="normal"></i>正常</span>
+                <span><i class="warning"></i>关注</span>
+                <span><i class="danger"></i>危险</span>
+              </div>
+            </div>
+            <div id="baiduMap" class="baidu-map" aria-label="模拟施工地图工人定位">
+              <div id="mapFallback" class="map-fallback is-visible">
+                <div class="fallback-site-map" id="fallbackSiteMap" aria-label="施工区域定位示意图">
+                  <span class="site-zone zone-a">主体施工区</span>
+                  <span class="site-zone zone-b">材料堆放区</span>
+                  <span class="site-zone zone-c">设备作业区</span>
+                  <span class="site-road road-a"></span>
+                  <span class="site-road road-b"></span>
+                  <div id="fallbackWorkerMarkers"></div>
+                </div>
+                <div class="map-fallback-note">
+                  <strong>模拟定位运行中</strong>
+                  <span>工人位置和风险状态会随模拟数据持续更新。</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <aside class="location-worker-panel">
+            <div class="location-panel-head">
+              <div>
+                <p class="eyebrow">Location List</p>
+                <h3>工人位置清单</h3>
+              </div>
+              <span id="locationOnlineState">等待定位数据</span>
+            </div>
+            <div id="locationWorkerList" class="location-worker-list"></div>
+          </aside>
+        </section>
       </section>
     </main>
 

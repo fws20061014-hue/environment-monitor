@@ -85,6 +85,33 @@
         box-shadow: 0 0 0 5px rgba(31, 157, 104, 0.12);
       }
 
+      .header-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      .location-entry {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        border-radius: 8px;
+        padding: 0 16px;
+        color: #ffffff;
+        font-weight: 900;
+        text-decoration: none;
+        background: linear-gradient(135deg, var(--green), var(--blue));
+        box-shadow: 0 8px 18px rgba(40, 120, 199, 0.16);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .location-entry:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(40, 120, 199, 0.24);
+      }
+
       .stats {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -203,6 +230,21 @@
         background: rgba(31, 157, 104, 0.12);
       }
 
+      .photo-badge {
+        border-radius: 999px;
+        padding: 5px 8px;
+        color: #607178;
+        font-size: 0.7rem;
+        font-weight: 900;
+        background: #f3f6f6;
+        white-space: nowrap;
+      }
+
+      .photo-badge.has-photo {
+        color: #1d6b62;
+        background: rgba(31, 157, 104, 0.12);
+      }
+
       .off-duty .duty-badge {
         color: #687981;
         background: #f1f4f5;
@@ -215,47 +257,41 @@
         display: grid;
         grid-template-columns: 70px minmax(0, 1fr);
         gap: 12px;
+        align-items: stretch;
         margin-top: 14px;
       }
 
-      .worker-icon {
+      .no-photo .body {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .worker-photo {
         position: relative;
         width: 70px;
         height: 88px;
         border-radius: 8px;
-        background: #eef4f6;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        background: #f3f6f6;
       }
 
-      .worker-icon::before {
-        content: "";
-        position: absolute;
-        left: 16px;
-        top: 30px;
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        background: #ffd6b0;
+      .worker-photo img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
       }
 
-      .worker-icon::after {
-        content: "";
+      .worker-photo-id {
         position: absolute;
-        left: 10px;
-        top: 18px;
-        width: 50px;
-        height: 22px;
-        border-radius: 22px 22px 8px 8px;
-        background: var(--yellow);
-      }
-
-      .worker-icon span {
-        position: absolute;
-        left: 12px;
-        bottom: 8px;
-        width: 46px;
-        height: 28px;
-        border-radius: 8px 8px 4px 4px;
-        background: linear-gradient(135deg, var(--blue), var(--green));
+        left: 6px;
+        bottom: 6px;
+        border-radius: 999px;
+        padding: 3px 6px;
+        color: #fff;
+        font-size: 0.64rem;
+        font-weight: 900;
+        background: rgba(23, 43, 53, 0.72);
       }
 
       .metrics {
@@ -432,6 +468,7 @@
       @media (max-width: 760px) {
         header,
         .toolbar { align-items: stretch; flex-direction: column; }
+        .header-actions { justify-content: space-between; }
         #workerGrid,
         .stats { grid-template-columns: 1fr; }
       }
@@ -444,7 +481,10 @@
           <p class="eyebrow">Helmet Admin</p>
           <h1>安全帽工人状态管理员</h1>
         </div>
-        <span class="live"><i></i>异常自动置顶</span>
+        <div class="header-actions">
+          <span class="live"><i></i>异常自动置顶</span>
+          <a class="location-entry" href="../../index.html?view=location">工人定位</a>
+        </div>
       </header>
 
       <section class="stats" aria-label="工人状态统计">
@@ -469,6 +509,7 @@
       const COUNT = 20;
       const TEMP_LIMIT = 37.5;
       const DUST_LIMIT = 120;
+      const WORKER_IMAGE_LOCAL_KEY = "helmetWorkerImages";
       const savedNames = JSON.parse(localStorage.getItem("helmetAdminWorkerNames") || "{}");
       const workers = Array.from({ length: COUNT }, (_, index) => ({
         id: index + 1,
@@ -528,16 +569,19 @@
         const tempBang = worker.temperature >= TEMP_LIMIT ? '<span class="bang">!</span>' : "";
         const dustBang = worker.dust >= DUST_LIMIT ? '<span class="bang">!</span>' : "";
         const fallIcon = worker.fallen ? '<span class="triangle"></span>' : "";
-        return `<article class="card ${state.level} ${worker.onDuty ? "on-duty" : "off-duty"}">
+        const photoUrl = getWorkerPhotoUrl(worker.id);
+        const photoHtml = renderWorkerPhoto(worker, photoUrl);
+        return `<article class="card ${state.level} ${worker.onDuty ? "on-duty" : "off-duty"} ${photoUrl ? "has-photo" : "no-photo"}">
           <div class="card-head">
             <input class="name-input" data-id="${worker.id}" value="${escapeHtml(worker.name)}" />
             <div class="status-stack">
               <span class="duty-badge">${worker.onDuty ? "在岗" : "离岗"}</span>
               <span class="badge">${state.label}</span>
+              <span class="photo-badge ${photoUrl ? "has-photo" : ""}">${photoUrl ? "照片已录入" : "照片未录入"}</span>
             </div>
           </div>
           <div class="body">
-            <div class="worker-icon"><span></span></div>
+            ${photoHtml}
             <div class="metrics">
               <div class="metric"><span><i class="signal-light ${tempLight.className}" title="${tempLight.label}"></i>体温</span><strong>${worker.temperature.toFixed(1)} °C ${tempBang}</strong></div>
               <div class="metric"><span><i class="signal-light ${dustLight.className}" title="${dustLight.label}"></i>附近粉尘</span><strong>${worker.dust.toFixed(0)} µg/m³ ${dustBang}</strong></div>
@@ -554,6 +598,33 @@
             <button class="talk" type="button">对话</button>
           </div>
         </article>`;
+      }
+
+      function renderWorkerPhoto(worker, photoUrl) {
+        if (!photoUrl) return "";
+        return `<div class="worker-photo">
+          <img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(worker.name)}照片" loading="lazy" />
+          <span class="worker-photo-id">ID ${String(worker.id).padStart(2, "0")}</span>
+        </div>`;
+      }
+
+      function getWorkerPhotoUrl(workerId) {
+        const records = readLocalJson(WORKER_IMAGE_LOCAL_KEY, []);
+        const record = records.find((item) => Number(item.workerId) === Number(workerId) && item.image?.url);
+        if (!record) return "";
+        const url = String(record.image.url || "");
+        if (!url) return "";
+        if (url.startsWith("data:") || url.startsWith("blob:") || url.startsWith("http")) return url;
+        const apiBase = window.ENV_MONITOR_CONFIG?.feedbackApiBase || (window.location.protocol === "file:" ? "http://localhost:3000" : window.location.origin);
+        return `${apiBase}${url}`;
+      }
+
+      function readLocalJson(key, fallback) {
+        try {
+          return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+        } catch {
+          return fallback;
+        }
       }
 
       function risk(worker) {

@@ -2,6 +2,7 @@ const WORKER_COUNT = 20;
 const TEMP_LIMIT = 37.5;
 const DUST_LIMIT = 120;
 const PRIORITY_SIZE = 10;
+const WORKER_IMAGE_LOCAL_KEY = "helmetWorkerImages";
 
 const savedNames = JSON.parse(localStorage.getItem("helmetWorkerNames") || "{}");
 const workers = Array.from({ length: WORKER_COUNT }, (_, index) => ({
@@ -20,14 +21,19 @@ const workers = Array.from({ length: WORKER_COUNT }, (_, index) => ({
   battery: 72 + Math.round(Math.random() * 26),
   batteryTrend: "stable",
   lastUpdate: new Date(),
+  lng: (window.ENV_MONITOR_CONFIG?.siteCenter?.lng || 116.404) + ((index % 5) - 2) * 0.00115 + randomBetween(-0.00025, 0.00025),
+  lat: (window.ENV_MONITOR_CONFIG?.siteCenter?.lat || 39.915) + (Math.floor(index / 5) - 1.5) * 0.00082 + randomBetween(-0.0002, 0.0002),
 }));
 
 const dashboardPage = document.querySelector("#dashboardPage");
 const workersPage = document.querySelector("#workersPage");
+const locationPage = document.querySelector("#locationPage");
 const introScreen = document.querySelector("#introScreen");
 const enterConsole = document.querySelector("#enterConsole");
 const toWorkersPage = document.querySelector("#toWorkersPage");
+const toLocationPage = document.querySelector("#toLocationPage");
 const backDashboard = document.querySelector("#backDashboard");
+const backDashboardFromLocation = document.querySelector("#backDashboardFromLocation");
 const priorityWorkerGrid = document.querySelector("#priorityWorkerGrid");
 const allWorkerGrid = document.querySelector("#allWorkerGrid");
 const workerDialog = document.querySelector("#workerDialog");
@@ -35,6 +41,19 @@ const workerDetail = document.querySelector("#workerDetail");
 const broadcastButtons = document.querySelectorAll(".broadcast-action");
 const workerFocusLayer = document.querySelector("#workerFocusLayer");
 const workerFocusContent = document.querySelector("#workerFocusContent");
+const locationWorkerList = document.querySelector("#locationWorkerList");
+const mapFallback = document.querySelector("#mapFallback");
+const fallbackWorkerMarkers = document.querySelector("#fallbackWorkerMarkers");
+
+const locationEls = {
+  pageTime: document.querySelector("#locationPageTime"),
+  totalCount: document.querySelector("#locationTotalCount"),
+  dutyCount: document.querySelector("#locationDutyCount"),
+  riskCount: document.querySelector("#locationRiskCount"),
+  onlineState: document.querySelector("#locationOnlineState"),
+  method: document.querySelector("#locationMethod"),
+  methodNote: document.querySelector("#locationMethodNote"),
+};
 
 const weatherEls = {
   board: document.querySelector("#weatherBoard"),
@@ -81,22 +100,40 @@ let tick = 0;
 let lastRemoteAction = "暂无";
 let focusedWorkerId = null;
 let focusedWorkerScope = "";
+let baiduMap = null;
+let baiduMapLoading = false;
 
 enterConsole?.addEventListener("click", () => {
   introScreen?.classList.add("is-hidden");
 });
 
 toWorkersPage.addEventListener("click", () => {
-  dashboardPage.classList.add("is-hidden");
-  workersPage.classList.remove("is-hidden");
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  showPage(workersPage);
 });
 
 backDashboard.addEventListener("click", () => {
-  workersPage.classList.add("is-hidden");
-  dashboardPage.classList.remove("is-hidden");
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  showPage(dashboardPage);
 });
+
+toLocationPage.addEventListener("click", () => {
+  showPage(locationPage);
+  loadBaiduMap();
+});
+
+backDashboardFromLocation.addEventListener("click", () => {
+  showPage(dashboardPage);
+});
+
+function showPage(page) {
+  [dashboardPage, workersPage, locationPage].forEach((item) => item.classList.toggle("is-hidden", item !== page));
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+if (new URLSearchParams(window.location.search).get("view") === "location") {
+  introScreen?.classList.add("is-hidden");
+  showPage(locationPage);
+  loadBaiduMap();
+}
 
 broadcastButtons.forEach((button) => {
   button.addEventListener("click", () => handleBroadcast(button));
@@ -154,6 +191,10 @@ function updateSimulation() {
     worker.heartRate = Math.round(clamp(worker.heartRate + randomBetween(-2.8, 3.2), 58, 128));
     worker.battery = Math.round(clamp(worker.battery - Math.random() * 0.18 + (worker.onDuty ? 0 : 0.04), 18, 100));
     worker.batteryTrend = worker.battery < previousBattery ? "down" : worker.battery > previousBattery ? "up" : "stable";
+    if (worker.onDuty) {
+      worker.lng += randomBetween(-0.000025, 0.000025);
+      worker.lat += randomBetween(-0.000018, 0.000018);
+    }
 
     if (!worker.demoFallen && tick % 9 === 0 && Math.random() < 0.18) worker.fallen = !worker.fallen;
     if (!worker.demoFallen && worker.fallen && Math.random() < 0.08) worker.fallen = false;
@@ -189,7 +230,145 @@ function render() {
   renderSafetyAside(abnormalCount, fallenCount, helmetAlarmCount);
   renderWorkerGrid(priorityWorkerGrid, priorityWorkers, true);
   renderWorkerGrid(allWorkerGrid, ranked, false);
+  renderLocationPage(now);
   if (focusedWorkerId) showWorkerFocus(focusedWorkerId);
+}
+
+function renderLocationPage(now) {
+  if (!locationWorkerList) return;
+  const ranked = getRankedWorkers();
+  const onDutyCount = workers.filter((worker) => worker.onDuty).length;
+  const riskCount = workers.filter((worker) => getWorkerRisk(worker).level !== "normal").length;
+
+  locationEls.pageTime.textContent = `更新时间：${now.toLocaleString("zh-CN")}`;
+  locationEls.totalCount.textContent = `${workers.length} 人`;
+  locationEls.dutyCount.textContent = `${onDutyCount} 人`;
+  locationEls.riskCount.textContent = `${riskCount} 人`;
+  locationEls.onlineState.textContent = baiduMap ? "真实地图定位运行中" : "模拟定位运行中";
+  locationEls.method.textContent = baiduMap ? "百度地图" : "模拟施工地图";
+  locationEls.methodNote.textContent = baiduMap ? "浏览器端 JavaScript API" : "本地坐标动态模拟";
+
+  locationWorkerList.innerHTML = ranked.map((worker) => {
+    const risk = getWorkerRisk(worker);
+    return `<button class="location-worker-item ${risk.level}" type="button" data-location-worker="${worker.id}">
+      <i></i>
+      <span>
+        <strong>${escapeHtml(worker.name)}</strong>
+        <small>${worker.onDuty ? "在岗" : "离岗"} · ${risk.label}</small>
+      </span>
+      <em>${worker.lng.toFixed(5)}, ${worker.lat.toFixed(5)}</em>
+    </button>`;
+  }).join("");
+
+  locationWorkerList.querySelectorAll("[data-location-worker]").forEach((button) => {
+    button.addEventListener("click", () => focusWorkerOnMap(Number(button.dataset.locationWorker)));
+  });
+
+  if (baiduMap) renderBaiduMapMarkers();
+  else renderFallbackMapMarkers();
+}
+
+function renderFallbackMapMarkers() {
+  if (!fallbackWorkerMarkers) return;
+  const lngs = workers.map((worker) => worker.lng);
+  const lats = workers.map((worker) => worker.lat);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  fallbackWorkerMarkers.innerHTML = workers.map((worker) => {
+    const risk = getWorkerRisk(worker);
+    const left = 8 + ((worker.lng - minLng) / Math.max(0.00001, maxLng - minLng)) * 84;
+    const top = 9 + (1 - (worker.lat - minLat) / Math.max(0.00001, maxLat - minLat)) * 78;
+    return `<button class="fallback-worker-marker ${risk.level}" type="button"
+      style="left:${left.toFixed(1)}%;top:${top.toFixed(1)}%" data-fallback-worker="${worker.id}"
+      title="${escapeHtml(worker.name)} · ${risk.label}"><i></i><span>${worker.id}</span></button>`;
+  }).join("");
+  fallbackWorkerMarkers.querySelectorAll("[data-fallback-worker]").forEach((button) => {
+    button.addEventListener("click", () => showWorkerDetail(Number(button.dataset.fallbackWorker)));
+  });
+}
+
+function loadBaiduMap() {
+  if (baiduMap || baiduMapLoading) return;
+  const ak = window.ENV_MONITOR_CONFIG?.baiduMapAk?.trim();
+  if (!ak) {
+    mapFallback?.classList.add("is-visible");
+    renderFallbackMapMarkers();
+    return;
+  }
+
+  baiduMapLoading = true;
+  window.initBaiduWorkerMap = initBaiduWorkerMap;
+  const script = document.createElement("script");
+  script.src = `https://api.map.baidu.com/api?v=3.0&ak=${encodeURIComponent(ak)}&callback=initBaiduWorkerMap`;
+  script.async = true;
+  script.onerror = () => {
+    baiduMapLoading = false;
+    mapFallback?.classList.add("is-visible");
+    mapFallback.querySelector("strong").textContent = "已切换模拟施工地图";
+    mapFallback.querySelector("span").textContent = "真实地图暂时不可用，模拟位置与风险状态仍会持续更新。";
+  };
+  document.head.appendChild(script);
+}
+
+function initBaiduWorkerMap() {
+  if (!window.BMap) return;
+  const center = window.ENV_MONITOR_CONFIG?.siteCenter || { lng: 116.404, lat: 39.915 };
+  baiduMap = new BMap.Map("baiduMap");
+  baiduMap.centerAndZoom(new BMap.Point(center.lng, center.lat), 17);
+  baiduMap.enableScrollWheelZoom(true);
+  baiduMap.addControl(new BMap.NavigationControl());
+  baiduMap.addControl(new BMap.ScaleControl());
+  mapFallback?.classList.remove("is-visible");
+  baiduMapLoading = false;
+  renderBaiduMapMarkers();
+}
+
+function renderBaiduMapMarkers() {
+  if (!baiduMap || !window.BMap) return;
+  baiduMap.clearOverlays();
+  workers.forEach((worker) => {
+    const risk = getWorkerRisk(worker);
+    const point = new BMap.Point(worker.lng, worker.lat);
+    const marker = new BMap.Marker(point);
+    marker.setTitle(`${worker.name} · ${risk.label}`);
+    marker.addEventListener("click", () => openWorkerMapInfo(worker, marker));
+    baiduMap.addOverlay(marker);
+
+    const label = new BMap.Label(worker.name, { offset: new BMap.Size(18, -16) });
+    label.setStyle({
+      color: risk.level === "normal" ? "#087d63" : risk.level === "warning" ? "#9a6200" : "#b42318",
+      border: "1px solid currentColor",
+      borderRadius: "999px",
+      padding: "3px 8px",
+      backgroundColor: "#ffffff",
+      fontWeight: "700",
+    });
+    marker.setLabel(label);
+  });
+}
+
+function focusWorkerOnMap(workerId) {
+  const worker = workers.find((item) => item.id === workerId);
+  if (!worker) return;
+  if (!baiduMap) {
+    showWorkerDetail(workerId);
+    return;
+  }
+  const point = new BMap.Point(worker.lng, worker.lat);
+  baiduMap.panTo(point);
+  openWorkerMapInfo(worker);
+}
+
+function openWorkerMapInfo(worker, marker) {
+  if (!baiduMap || !window.BMap) return;
+  const risk = getWorkerRisk(worker);
+  const content = `<div class="map-info-window"><strong>${escapeHtml(worker.name)}</strong><br>
+    状态：${risk.label}<br>体温：${worker.temperature.toFixed(1)} °C<br>
+    粉尘：${worker.dust.toFixed(0)} µg/m³</div>`;
+  const infoWindow = new BMap.InfoWindow(content, { title: "安全帽定位信息", width: 230 });
+  baiduMap.openInfoWindow(infoWindow, marker?.getPosition?.() || new BMap.Point(worker.lng, worker.lat));
 }
 
 function renderWeather(now) {
@@ -483,6 +662,35 @@ function activateHelmetAlarm(worker, source) {
   return true;
 }
 
+function renderWorkerPhoto(worker, extraClass = "", photoUrl = getWorkerPhotoUrl(worker.id)) {
+  const idText = `ID ${String(worker.id).padStart(2, "0")}`;
+  if (!photoUrl) return "";
+
+  return `<div class="worker-photo has-real-photo ${extraClass}">
+    <img class="worker-real-photo" src="${escapeHtml(photoUrl)}" alt="${escapeHtml(worker.name)}照片" loading="lazy" />
+    <span class="worker-photo-id">${idText}</span>
+  </div>`;
+}
+
+function getWorkerPhotoUrl(workerId) {
+  const records = readLocalJson(WORKER_IMAGE_LOCAL_KEY, []);
+  const record = records.find((item) => Number(item.workerId) === Number(workerId) && item.image?.url);
+  if (!record) return "";
+  const url = String(record.image.url || "");
+  if (!url) return "";
+  if (url.startsWith("data:") || url.startsWith("blob:") || url.startsWith("http")) return url;
+  const apiBase = window.ENV_MONITOR_CONFIG?.feedbackApiBase || window.location.origin;
+  return `${apiBase}${url}`;
+}
+
+function readLocalJson(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+  } catch {
+    return fallback;
+  }
+}
+
 function renderWorkerCard(worker, compact) {
   const risk = getWorkerRisk(worker);
   const tempLight = getMetricLight("temperature", worker);
@@ -495,8 +703,10 @@ function renderWorkerCard(worker, compact) {
   const helmetAlarmIcon = `<span class="helmet-alarm-dot ${worker.helmetAlarm ? "is-active" : "is-idle"}" aria-label="${worker.helmetAlarm ? "头盔主动报警" : "头盔未报警"}">${worker.helmetAlarm ? "!" : "OK"}</span>`;
   const battery = getBatteryState(worker);
   const dutyClass = worker.onDuty ? "on-duty" : "off-duty";
+  const photoUrl = getWorkerPhotoUrl(worker.id);
+  const photoClass = photoUrl ? "has-photo" : "no-photo";
 
-  return `<article class="worker-card detail-open ${risk.level}${worker.fallen ? " fallen" : ""}${worker.helmetAlarm ? " helmet-alarm" : ""} ${dutyClass}" data-id="${worker.id}">
+  return `<article class="worker-card detail-open ${risk.level}${worker.fallen ? " fallen" : ""}${worker.helmetAlarm ? " helmet-alarm" : ""} ${dutyClass} ${photoClass}" data-id="${worker.id}">
     <div class="worker-head">
       <div class="name-field">
         <label for="worker-${worker.id}-${compact ? "p" : "a"}">工人姓名</label>
@@ -507,8 +717,13 @@ function renderWorkerCard(worker, compact) {
         <span class="risk-badge">${risk.label}</span>
       </div>
     </div>
+    <div class="worker-meta">
+      <span>安全帽 H-${String(worker.id).padStart(3, "0")}</span>
+      <span>${worker.onDuty ? "定位在线" : "暂离现场"}</span>
+      <span>${photoUrl ? "照片已录入" : "照片未录入"}</span>
+    </div>
     <div class="worker-body">
-      <div class="worker-icon"><span class="vest"></span></div>
+      ${renderWorkerPhoto(worker, "", photoUrl)}
       <div class="worker-metrics">
         <div class="worker-metric"><span><i class="signal-light ${tempLight.className}" title="${tempLight.label}"></i>体温</span><strong>${worker.temperature.toFixed(1)} °C${tempAlert}</strong></div>
         <div class="worker-metric"><span><i class="signal-light ${dustLight.className}" title="${dustLight.label}"></i>附近粉尘</span><strong>${worker.dust.toFixed(0)} µg/m³${dustAlert}</strong></div>
@@ -548,7 +763,7 @@ function showWorkerFocus(workerId, anchorCard = null) {
   workerFocusContent.innerHTML = `<section class="focus-worker-card">
     <p class="eyebrow">Worker Focus</p>
     <div class="focus-worker-main">
-      <div class="worker-icon focus-avatar"><span class="vest"></span></div>
+      ${renderWorkerPhoto(worker, "focus-avatar")}
       <div>
         <span class="focus-kicker">当前工人</span>
         <strong>${escapeHtml(worker.name)}</strong>
@@ -686,6 +901,7 @@ function showWorkerDetail(workerId) {
       <div class="detail-row"><span>是否在岗</span><strong>${worker.onDuty ? "在岗" : "离岗"}</strong></div>
       <div class="detail-row"><span>心率</span><strong>${worker.heartRate} bpm</strong></div>
       <div class="detail-row"><span>安全帽电量</span><strong>${worker.battery}%</strong></div>
+      <div class="detail-row"><span>定位坐标</span><strong>${worker.lng.toFixed(5)}, ${worker.lat.toFixed(5)}</strong></div>
     </div>
     <p class="detail-note">异常规则：按下头盔后部报警按钮会被置为最紧急；其次是摔倒、体温异常、粉尘异常。</p>
   </section>`;
